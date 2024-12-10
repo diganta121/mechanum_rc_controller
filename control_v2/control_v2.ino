@@ -4,10 +4,20 @@ int cc_speed = 1300;  //Clockwise speed
 int cw_speed = 1700;  //Counter clockwise speed
 
 //pins
-const int fl = 16;
+const int fl = 16; // p side
 const int fr = 17;
 const int bl = 18;
 const int br = 19;
+
+const int fl = 16; // N side
+const int fr = 17;
+const int bl = 18;
+const int br = 19;
+
+const int enfl = 16;//enable pins
+const int enfr = 17;
+const int enbl = 18;
+const int enbr = 19;
 
 const int ch_Speed = 5;
 const int ch_strafe = 6;
@@ -68,10 +78,10 @@ void loop() {
   //Serial.println((Direction));
 
 
-  flss = map(sParams[0].toInt(), -99, 99, 1000, 2000);  //Forward left wheel speed
-  frs = map(sParams[1].toInt(), -99, 99, 1000, 2000);   //Forward right wheel speed
-  bls = map(sParams[2].toInt(), -99, 99, 1000, 2000);   //Back left speed
-  brs = map(sParams[3].toInt(), -99, 99, 1000, 2000);   //Back right speed
+  flss = climt(speed + strafe - rotate); //map(sParams[0].toInt(), -99, 99, 1000, 2000);  //Forward left wheel speed
+  frs = climt(speed - strafe - rotate); //map(sParams[1].toInt(), -99, 99, 1000, 2000);   //Forward right wheel speed
+  bls = climt(speed - strafe + rotate ); // map(sParams[2].toInt(), -99, 99, 1000, 2000);   //Back left speed
+  brs = climt(speed + strafe - rotate ); // map(sParams[3].toInt(), -99, 99, 1000, 2000);   //Back right speed
 
   char buffer[40];
   sprintf(buffer, " %d %d", flss, frs);
@@ -89,17 +99,26 @@ void loop() {
   // Serial.println(brs);
 }
 
-
-
-void motor_forward(int flss, int frs, int bls, int brs) {
-  fl.writeMicroseconds(flss);
-  fr.writeMicroseconds(frs);
-  bl.writeMicroseconds(bls);
-  br.writeMicroseconds(brs);
+int climt(int n){
+  if (n>255){
+    return (255);
+  }
+  else if(n<0){
+    return (0);
+  }
+  else {
+    return (n);
+  }
 }
-void motor_stop() {
-  fl.writeMicroseconds(1500);
-  fr.writeMicroseconds(1500);
-  bl.writeMicroseconds(1500);
-  br.writeMicroseconds(1500);
+
+void motor(int sp, int p, int n,int enpin,int en){
+  if (sp<0){
+    analogWrite(enpin,sp);
+    digitalWrite(p,LOW);
+  }
+  // elif else
+}
+
+void stop() {
+  digitalWrite(en,LOW);
 }
