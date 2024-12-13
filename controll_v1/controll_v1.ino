@@ -1,4 +1,4 @@
- 
+// dont use this
 char command; 
 
 int SpeedM1 = 0;
@@ -57,7 +57,7 @@ void loop() {
 
 
 void forward()
-{
+
 
   SpeedM1 = 255;
   motor1.run(FORWARD); 

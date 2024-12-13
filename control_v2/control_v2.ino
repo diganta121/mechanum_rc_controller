@@ -1,29 +1,32 @@
 //pins
-const int flP = 16;  // p side
-const int frP = 17;
-const int blP = 18;
-const int brP = 19;
+const int flP = 0;  // p side
+const int frP = 1;
+const int blP = 2;
+const int brP = 3;
 
-const int flN = 16;  // N side
-const int frN = 17;
-const int blN = 18;
-const int brN = 19;
+const int flN = 4;  // N side
+const int frN = 5;
+const int blN = 6;
+const int brN = 7;
 
-const int enfl = 16;  //enable pins
-const int enfr = 17;
-const int enbl = 18;
-const int enbr = 19;
+const int enfl = 8;  //enable pins
+const int enfr = 9;
+const int enbl = 10;
+const int enbr = 11;
 
-const int ch_speed = 5;  //rc pins
-const int ch_strafe = 6;
-const int ch_rotate = 7;
+const int ch_speed = 19;  //rc pins
+const int ch_strafe = 20;
+const int ch_rotate = 21;
 
-const int deadzone = 2;
+const int deadzone = 5;
 
 int speed = 0;
 int strafe = 0;
 int rotate = 0;
 
+int speed_inp = 0;
+int strafe_inp = 0;
+int rotate_inp = 0;
 //Speed varialbles for each wheel
 int flss = 0;
 int frs = 0;
@@ -33,18 +36,18 @@ int brs = 0;
 bool KILLSWITCH = false;
 
 void setup() {
-  // pinMode(flP, OUTPUT);   //d8-Forward left
-  // pinMode(frP, OUTPUT);   //Forward right
-  // pinMode(blP, OUTPUT);   //Back left
-  // pinMode(brP, OUTPUT);   //Back right
-  // pinMode(flN, OUTPUT);   //d8-Forward left
-  // pinMode(frN, OUTPUT);   //Forward right
-  // pinMode(blN, OUTPUT);   //Back left
-  // pinMode(brN, OUTPUT);   //Back right
-  // pinMode(enfl, OUTPUT);  //d8-Forward left
-  // pinMode(enfr, OUTPUT);  //Forward right
-  // pinMode(enbl, OUTPUT);  //Back left
-  // pinMode(enbr, OUTPUT);  //Back right
+  pinMode(flP, OUTPUT);   //d8-Forward left
+  pinMode(frP, OUTPUT);   //Forward right
+  pinMode(blP, OUTPUT);   //Back left
+  pinMode(brP, OUTPUT);   //Back right
+  pinMode(flN, OUTPUT);   //d8-Forward left
+  pinMode(frN, OUTPUT);   //Forward right
+  pinMode(blN, OUTPUT);   //Back left
+  pinMode(brN, OUTPUT);   //Back right
+  pinMode(enfl, OUTPUT);  //d8-Forward left
+  pinMode(enfr, OUTPUT);  //Forward right
+  pinMode(enbl, OUTPUT);  //Back left
+  pinMode(enbr, OUTPUT);  //Back right
 
   pinMode(ch_speed, INPUT);  // input
   pinMode(ch_strafe, INPUT);
@@ -52,7 +55,7 @@ void setup() {
 
 
   Serial.begin(115200);
-  Serial.println("bot started: ");
+  // Serial.println("bot started: ");
 }
 
 void loop() {
@@ -62,7 +65,7 @@ void loop() {
   int strafe_inp = pulseIn(ch_strafe, HIGH);
   strafe = map(strafe_inp, 1000, 2000, -255, 255);
 
-  int rotate_inp = pulseIn(ch_rotate, HIGH);
+  rotate_inp = pulseIn(ch_rotate, HIGH);
   rotate = map(rotate_inp, 1000, 2000, -255, 255);
 
   Serial.print(speed);
