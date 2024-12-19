@@ -13,9 +13,17 @@
 // & 3.3V    & GND
 
 #define LED_PIN 19
+bool RFB = false;
+bool RBB = false;
+
+bool LFB = false;
+bool LBB = false;
+
+bool SPB = false;
 
 int Rm = 0;
 int Lm = 0;
+
 int bValue = 0;
 
 // REPLACE WITH YOUR RECEIVER MAC Address
@@ -53,7 +61,8 @@ void setup() {
   pinMode(SPButton, INPUT);
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
-
+delay(100);
+    digitalWrite(LED_PIN, LOW);
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
@@ -76,12 +85,40 @@ void setup() {
 }
 
 void loop() {
-  Rm = digitalRead(RFButton);
-  Lm = digitalRead(LFButton);
+  RFB = read_button(RFButton);
+  LFB = read_button(LFButton);
+  
+  RBB = read_button(RBButton);
+  LBB = read_button(LBButton);
 
-  myData.RState = Rm;
-  myData.LState = Lm;
+  if(!(RFB && RBB)){
+    if(RFB){
+      myData.RState = 1;
+    }
+    else if(RBB) {
+      myData.RState = -1;
+    }
+    else{
+      myData.RState = 0;
+    }
+  }
+  else{
+    myData.RState = 0;
+  }
 
+  if(!(LFB && LBB)){
+    if(LFB){
+      myData.LState = 1;
+    }
+    else if(LBB){
+      myData.LState = -1;
+    }
+    else{
+      myData.LState = 0;
+  }
+  else{
+    myData.LState = 0;
+  }
   //myData.RState = Rm;
   //myData.LState = Lm;
   //myData.RState = analogRead(RFButton);
@@ -90,7 +127,7 @@ void loop() {
 
   // Read the button value
   bValue = read_button(SPButton);
-  delay(20);
+  delay(2);
   myData.SpeedState = bValue;
   //myData.SpeedState = button.getState();
 
@@ -111,14 +148,15 @@ void loop() {
   } else {
     Serial.println("Error");
   }
-  delay(60);
+  delay(50);
 }
 
 
 int read_button(int a){
-  int s
-  for(int i=0;i<3;i++){
-    s = s+ digitalRead(a);
+  int s = 0;
+  for(int i=0;i<4;i++){
+    s += digitalRead(a);
+    delay(2);
   }
-  
+  return (s>2)? true : false ;
 }
