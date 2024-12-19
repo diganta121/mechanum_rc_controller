@@ -2,11 +2,11 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
-const int RFButton = 14;
-const int RBButton = 27;
-const int LFButton = 26;
-const int LBButton = 25;
-const int SPButton = 33;
+const int RFButton = 33;
+const int RBButton = 14;
+const int LFButton = 25;
+const int LBButton = 27;
+const int SPButton = 26;
 // & 3.3V    & GND
 
 #define LED_PIN 19
@@ -50,12 +50,12 @@ void setup() {
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
 
-  pinMode(RFButton, INPUT);
-  pinMode(LFButton, INPUT);
-  pinMode(RBButton, INPUT);
-  pinMode(LBButton, INPUT);
+  pinMode(RFButton, INPUT_PULLDOWN);
+  pinMode(LFButton, INPUT_PULLDOWN);
+  pinMode(RBButton, INPUT_PULLDOWN);
+  pinMode(LBButton, INPUT_PULLDOWN);
 
-  pinMode(SPButton, INPUT);
+  pinMode(SPButton, INPUT_PULLDOWN);
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   delay(200);
@@ -153,6 +153,6 @@ void loop() {
     Serial.println("Error");
   }
 
-  
+
   delay(50);
 }
