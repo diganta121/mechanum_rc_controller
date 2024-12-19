@@ -1,15 +1,12 @@
 // remote side dig
 #include <esp_now.h>
 #include <WiFi.h>
-#include <ezButton.h>
 
-#define RFButton 14
-#define RBButton 27
-
-#define LFButton 26
-#define LBButton 25
-
-#define SPButton 33
+const int RFButton = 14;
+const int RBButton = 27;
+const int LFButton = 26;
+const int LBButton = 25;
+const int SPButton = 33;
 // & 3.3V    & GND
 
 #define LED_PIN 19
@@ -21,13 +18,10 @@ bool LBB = false;
 
 bool SPB = false;
 
-int Rm = 0;
-int Lm = 0;
-
-int bValue = 0;
+bool bValue = 1;
 
 // REPLACE WITH YOUR RECEIVER MAC Address
-uint8_t broadcastAddress[] = { 0x34, 0x85, 0x18, 0x26, 0xD7, 0x34 };  //34:85:18:26:D7:34   ESP32-C3 Device1
+uint8_t broadcastAddress[] = { 0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E };  // Device1
 //uint8_t broadcastAddress[] = {0x34,0x85,0x18,0x26,0xC6,0x88};  //34:85:18:26:C6:88   ESP32-C3 Device2
 
 //uint8_t broadcastAddress[] = {0xC8,0xC9,0xA3,0xC9,0x14,0xEC};  //C8:C9:A3:C9:14:EC   ESP32-Wroom
@@ -36,9 +30,9 @@ uint8_t broadcastAddress[] = { 0x34, 0x85, 0x18, 0x26, 0xD7, 0x34 };  //34:85:18
 // Structure example to send data
 // Must match the receiver structure
 typedef struct struct_message {
-  short RState;// -1 , 0 ,1
+  short RState;  // -1 , 0 ,1
   short LState;
-  bool SpeedState;//0 , 1
+  bool SpeedState;  //0 , 1
 } struct_message;
 
 // Create a struct_message called myData & peer
@@ -60,12 +54,12 @@ void setup() {
   pinMode(LFButton, INPUT);
   pinMode(RBButton, INPUT);
   pinMode(LBButton, INPUT);
-  
+
   pinMode(SPButton, INPUT);
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
-delay(200);
-    digitalWrite(LED_PIN, LOW);
+  delay(200);
+  digitalWrite(LED_PIN, LOW);
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
@@ -87,63 +81,70 @@ delay(200);
   }
 }
 
-void loop() {
-  RFB = read_button(RFButton);
-  LFB = read_button(LFButton);
-  
-  RBB = read_button(RBButton);
-  LBB = read_button(LBButton);
 
-  if(!(RFB && RBB)){
-    if(RFB){
+bool button_state(int a) {
+  int s = 0;
+  for (int i = 0; i < 4; i++) {
+    s += digitalRead(a);
+    delay(2);
+  }
+  return (s > 2) ? true : false;
+}
+
+void loop() {
+  RFB = button_state(RFButton);
+  LFB = button_state(LFButton);
+
+  RBB = button_state(RBButton);
+  LBB = button_state(LBButton);
+
+  if (!(RFB && RBB)) {
+    if (RFB) {
       myData.RState = 1;
-    }
-    else if(RBB) {
+      Serial.println(" rf ");
+    } else if (RBB) {
       myData.RState = -1;
-    }
-    else{
+      Serial.println(" rb ");
+    } else {
       myData.RState = 0;
     }
-  }
-  else{
+  } else {
     myData.RState = 0;
+    Serial.println(" rboth ");
   }
 
-  if(!(LFB && LBB)){
-    if(LFB){
+  if (!(LFB && LBB)) {
+    if (LFB) {
       myData.LState = 1;
-    }
-    else if(LBB){
+      Serial.println(" lf ");
+    } else if (LBB) {
       myData.LState = -1;
-    }
-    else{
+      Serial.println(" lb ");
+    } else {
       myData.LState = 0;
-  }
-  else{
-    myData.LState = 0;
-  }
-  //myData.RState = Rm;
-  //myData.LState = Lm;
-  //myData.RState = analogRead(RFButton);
-  //myData.LState = analogRead(LFButton);
 
+    }
+  } 
+  else {
+    myData.LState = 0;
+    Serial.println(" lboth ");
+  }
 
   // Read the button value
-  bValue = read_button(SPButton);
-  delay(2);
+  //bValue = button_state(SPButton);
+  //delay(2);
   myData.SpeedState = bValue;
-  //myData.SpeedState = button.getState();
 
 
-  Serial.print(myData.RState);
-  Serial.print("  ");
-  Serial.print(myData.LState);
-  Serial.print("  ");
-  Serial.println(myData.SpeedState);
-  //Serial.println("");
+  // Serial.print(myData.RState);
+  // Serial.print(" ");
+  // Serial.print(myData.LState);
+  // Serial.print(" ");
+  // Serial.print(myData.SpeedState);
+  // //Serial.println("");
 
 
-  // Send message via ESP-NOW
+  // ==== Send message via ESP-NOW ==
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
 
   if (result == ESP_OK) {
@@ -151,15 +152,7 @@ void loop() {
   } else {
     Serial.println("Error");
   }
+
+  
   delay(50);
-}
-
-
-int read_button(int a){
-  int s = 0;
-  for(int i=0;i<4;i++){
-    s += digitalRead(a);
-    delay(2);
-  }
-  return (s>2)? true : false ;
 }
