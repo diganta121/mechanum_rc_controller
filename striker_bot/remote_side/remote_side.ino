@@ -58,10 +58,13 @@ void setup() {
 
   pinMode(RFButton, INPUT);
   pinMode(LFButton, INPUT);
+  pinMode(RBButton, INPUT);
+  pinMode(LBButton, INPUT);
+  
   pinMode(SPButton, INPUT);
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
-delay(100);
+delay(200);
     digitalWrite(LED_PIN, LOW);
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
