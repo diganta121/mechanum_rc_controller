@@ -41,7 +41,6 @@ esp_now_peer_info_t peerInfo;
 
 // callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("\r\n Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
   status == ESP_NOW_SEND_SUCCESS ? digitalWrite(LED_PIN, HIGH) : digitalWrite(LED_PIN, LOW);
 }
@@ -50,10 +49,10 @@ void setup() {
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
 
-  pinMode(RFButton, INPUT_PULLDOWN);
-  pinMode(LFButton, INPUT_PULLDOWN);
-  pinMode(RBButton, INPUT_PULLDOWN);
-  pinMode(LBButton, INPUT_PULLDOWN);
+  pinMode(RFButton, INPUT);
+  pinMode(LFButton, INPUT);
+  pinMode(RBButton, INPUT);
+  pinMode(LBButton, INPUT);
 
   pinMode(SPButton, INPUT_PULLDOWN);
   pinMode(LED_PIN, OUTPUT);
@@ -101,33 +100,32 @@ void loop() {
   if (!(RFB && RBB)) {
     if (RFB) {
       myData.RState = 1;
-      Serial.println(" rf ");
+      //Serial.println(" rf ");
     } else if (RBB) {
       myData.RState = -1;
-      Serial.println(" rb ");
+      //Serial.println(" rb ");
     } else {
       myData.RState = 0;
     }
   } else {
     myData.RState = 0;
-    Serial.println(" rboth ");
+    //Serial.println(" rboth ");
   }
 
   if (!(LFB && LBB)) {
     if (LFB) {
       myData.LState = 1;
-      Serial.println(" lf ");
+      //Serial.println(" lf ");
     } else if (LBB) {
       myData.LState = -1;
-      Serial.println(" lb ");
+      // Serial.println(" lb ");
     } else {
       myData.LState = 0;
-
     }
   } 
   else {
     myData.LState = 0;
-    Serial.println(" lboth ");
+    // Serial.println(" lboth ");
   }
 
   // Read the button value
@@ -136,12 +134,12 @@ void loop() {
   myData.SpeedState = bValue;
 
 
-  // Serial.print(myData.RState);
-  // Serial.print(" ");
-  // Serial.print(myData.LState);
-  // Serial.print(" ");
-  // Serial.print(myData.SpeedState);
-  // //Serial.println("");
+  Serial.print(myData.RState);
+  Serial.print(" ");
+  Serial.print(myData.LState);
+  Serial.print(" ");
+  Serial.print(myData.SpeedState);
+  Serial.print("  ");
 
 
   // ==== Send message via ESP-NOW ==
