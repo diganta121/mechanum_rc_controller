@@ -1,22 +1,22 @@
 //pins
-const int flP = 0;  // p side
-const int frP = 1;
-const int blP = 2;
-const int brP = 3;
+const int flP = 1;  // p side
+const int frP = 2;
+const int blP = 3;
+const int brP = 4;
 
-const int flN = 4;  // N side
-const int frN = 5;
-const int blN = 6;
-const int brN = 7;
+const int flN = 5;  // N side
+const int frN = 6;
+const int blN = 7;
+const int brN = 8;
 
-const int enfl = 8;  //enable pins
-const int enfr = 9;
-const int enbl = 10;
-const int enbr = 11;
+const int enfl = 9;  //enable pins
+const int enfr = 10;
+const int enbl = 11;
+const int enbr = 12;
 
-const int ch_speed = 19;  //rc pins
-const int ch_strafe = 20;
-const int ch_rotate = 21;
+const int ch_speed = 28;  //rc pins
+const int ch_strafe = 27;
+const int ch_rotate = 26;
 
 const int deadzone = 5;
 

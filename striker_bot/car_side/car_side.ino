@@ -13,15 +13,14 @@
 #define SPA 13
 #define SPB 14
 
-const unsigned int delaytime = 30;
+const unsigned int delaytime = 25;
 
-uint8_t newMACAddress[] = {0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E};
+uint8_t newMACAddress[] = { 0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E };
 
 
 typedef struct struct_message {
-  short RState;
-  short LState;
-  bool SpeedState;
+  int RState;
+  int LState;
 } struct_message;
 struct_message myData;
 
@@ -33,7 +32,7 @@ void OnDataRecv(const esp_now_recv_info_t *recv_info, const uint8_t *incomingDat
 }
 
 
-void readMacAddress(){
+void readMacAddress() {
   uint8_t baseMac[6];
   esp_err_t ret = esp_wifi_get_mac(WIFI_IF_STA, baseMac);
   if (ret == ESP_OK) {
@@ -60,13 +59,13 @@ void setup() {
   delay(200);
   WiFi.mode(WIFI_STA);
   Serial.println("started");
-  
+
   // Change ESP32 Mac Address
   esp_err_t err = esp_wifi_set_mac(WIFI_IF_STA, &newMACAddress[0]);
   if (err == ESP_OK) {
     Serial.println("Success changing Mac Address");
   }
-delay(100);
+  delay(100);
   readMacAddress();
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
@@ -79,31 +78,51 @@ delay(100);
 
 void loop() {
 }
-
 void commands() {
-  if (myData.RState > 0) {
+  //right side
+  int R = myData.RState;
+  int L = myData.LState;
+  Serial.print(L);
+  Serial.print(" ");
+  Serial.println(R);
+
+  if (R>1 ||R<-1){
+    analogWrite(SPA, 255);
+  }
+  else{
+    analogWrite(SPA, 120);
+  }
+
+
+  if (R > 0) {
     MRF();
-  } else if (myData.RState < 0) {
+  } 
+  else if (R < 0) {
     MRB();
-  } else {
+  } 
+  else {
     MRS();
   }
 
-  if (myData.LState > 0) {
+  //left side
+  if (L>1 || L<-1){
+    analogWrite(SPB, 255);
+  }
+  else{
+    analogWrite(SPB, 120);
+  }
+
+
+  if (L > 0 ) {
     MLF();
-  } else if (myData.LState < 0) {
+  } 
+  else if (L < 0) {
     MLB();
-  } else {
+  }
+   else {
     MLS();
   }
 
-  if (myData.SpeedState) {
-    analogWrite(SPA, 255);
-    analogWrite(SPB, 255);
-  } else {
-    analogWrite(SPA, 126);
-    analogWrite(SPB, 126);
-  }
 }
 
 void MRF() {

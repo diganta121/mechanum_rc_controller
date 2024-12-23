@@ -6,37 +6,39 @@ const int RFButton = 33;
 const int RBButton = 14;
 const int LFButton = 25;
 const int LBButton = 27;
-const int SPButton = 26;
-// & 3.3V    & GND
+
+const int LSPButton = 35;
+const int RSPButton = 34;
 
 #define LED_PIN 19
+
 bool RFB = false;
 bool RBB = false;
 
 bool LFB = false;
 bool LBB = false;
 
-bool SPB = false;
+int Rsp = 1;
+int Lsp = 1;
 
-bool bValue = 1;
+
 
 // REPLACE WITH YOUR RECEIVER MAC Address
-uint8_t broadcastAddress[] = { 0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E };  // Device1
-//uint8_t broadcastAddress[] = {0x34,0x85,0x18,0x26,0xC6,0x88};  //34:85:18:26:C6:88   ESP32-C3 Device2
+uint8_t broadcastAddress[] = { 0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E };  // car
 
-//uint8_t broadcastAddress[] = {0xC8,0xC9,0xA3,0xC9,0x14,0xEC};  //C8:C9:A3:C9:14:EC   ESP32-Wroom
-
+const int send_rate = 30;
+int sendvar = 0;
 
 // Structure example to send data
 // Must match the receiver structure
 typedef struct struct_message {
-  short RState;  // -1 , 0 ,1
-  short LState;
-  bool SpeedState;  //0 , 1
+  int RState;  // -2, -1 , 0 ,1 , 2
+  int LState;
 } struct_message;
 
-// Create a struct_message called myData & peer
-struct_message myData;
+// Create a struct_message called Data & peer
+struct_message Data;
+struct_message PrevData;
 esp_now_peer_info_t peerInfo;
 
 // callback when data is sent
@@ -54,7 +56,9 @@ void setup() {
   pinMode(RBButton, INPUT);
   pinMode(LBButton, INPUT);
 
-  pinMode(SPButton, INPUT_PULLDOWN);
+  pinMode(RSPButton, INPUT);
+  pinMode(LSPButton, INPUT);
+
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   delay(200);
@@ -85,9 +89,19 @@ bool button_state(int a) {
   int s = 0;
   for (int i = 0; i < 4; i++) {
     s += digitalRead(a);
-    delay(2);
+    delay(3);
   }
   return (s > 2) ? true : false;
+}
+
+bool DataDiff(){
+  // to check if Data and dataprev is different
+  if(Data.LState == PrevData.LState && Data.RState == PrevData.RState){
+    return false;
+  }
+  PrevData.LState = Data.LState;
+  PrevData.RState = Data.RState;
+  return true;
 }
 
 void loop() {
@@ -97,53 +111,51 @@ void loop() {
   RBB = button_state(RBButton);
   LBB = button_state(LBButton);
 
+  Rsp = button_state(RSPButton)? 2 : 1;
+  Lsp = button_state(LSPButton)? 2 : 1;
+
   if (!(RFB && RBB)) {
     if (RFB) {
-      myData.RState = 1;
+      Data.RState = Rsp;
       //Serial.println(" rf ");
     } else if (RBB) {
-      myData.RState = -1;
+      Data.RState = -Rsp;
       //Serial.println(" rb ");
     } else {
-      myData.RState = 0;
+      Data.RState = 0;
     }
   } else {
-    myData.RState = 0;
+    Data.RState = 0;
     //Serial.println(" rboth ");
   }
 
   if (!(LFB && LBB)) {
     if (LFB) {
-      myData.LState = 1;
+      Data.LState = Lsp;
       //Serial.println(" lf ");
     } else if (LBB) {
-      myData.LState = -1;
+      Data.LState = -Lsp;
       // Serial.println(" lb ");
     } else {
-      myData.LState = 0;
+      Data.LState = 0;
     }
   } 
   else {
-    myData.LState = 0;
+    Data.LState = 0;
     // Serial.println(" lboth ");
   }
 
   // Read the button value
   //bValue = button_state(SPButton);
   //delay(2);
-  myData.SpeedState = bValue;
 
-
-  Serial.print(myData.RState);
+  Serial.print(Data.RState);
   Serial.print(" ");
-  Serial.print(myData.LState);
-  Serial.print(" ");
-  Serial.print(myData.SpeedState);
-  Serial.print("  ");
+  Serial.println(Data.LState);
 
 
-  // ==== Send message via ESP-NOW ==
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
+  // === Send message via ESP-NOW only if data changed ===
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&Data, sizeof(Data));
 
   if (result == ESP_OK) {
     Serial.println("Sent");
@@ -151,6 +163,5 @@ void loop() {
     Serial.println("Error");
   }
 
-
-  delay(50);
+  delay(20); 
 }
