@@ -2,21 +2,24 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
-const int RFButton = 33;
-const int RBButton = 14;
-const int LFButton = 25;
-const int LBButton = 27;
+
+
+const int RAxisPin = 33;
+const int LAxisPin = 25;
 
 const int LSPButton = 35;
 const int RSPButton = 34;
 
 #define LED_PIN 19
 
-bool RFB = false;
-bool RBB = false;
+int Rvalue = 125;
+int Lvalue = 125;
 
-bool LFB = false;
-bool LBB = false;
+// bool RFB = false;
+// bool RBB = false;
+
+// bool LFB = false;
+// bool LBB = false;
 
 int Rsp = 1;
 int Lsp = 1;
@@ -51,10 +54,11 @@ void setup() {
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
 
-  pinMode(RFButton, INPUT);
-  pinMode(LFButton, INPUT);
-  pinMode(RBButton, INPUT);
-  pinMode(LBButton, INPUT);
+  pinMode(RAxisPin, INPUT);
+  pinMode(LAxisPin, INPUT);
+
+  // pinMode(RBButton, INPUT);
+  // pinMode(LBButton, INPUT);
 
   pinMode(RSPButton, INPUT);
   pinMode(LSPButton, INPUT);
@@ -94,19 +98,19 @@ bool button_state(int a) {
   return (s > 2) ? true : false;
 }
 
-bool DataDiff(){
-  // to check if Data and dataprev is different
-  if(Data.LState == PrevData.LState && Data.RState == PrevData.RState){
-    return false;
-  }
-  PrevData.LState = Data.LState;
-  PrevData.RState = Data.RState;
-  return true;
-}
+// bool DataDiff(){
+//   // to check if Data and dataprev is different
+//   if(Data.LState == PrevData.LState && Data.RState == PrevData.RState){
+//     return false;
+//   }
+//   PrevData.LState = Data.LState;
+//   PrevData.RState = Data.RState;
+//   return true;
+// }
 
 void loop() {
-  RFB = button_state(RFButton);
-  LFB = button_state(LFButton);
+  Rvalue = button_state(RFButton);
+  LValue = button_state(LFButton);
 
   RBB = button_state(RBButton);
   LBB = button_state(LBButton);
@@ -115,7 +119,6 @@ void loop() {
   Lsp = button_state(LSPButton)? 2 : 1;
 
   if (!(RFB && RBB)) {
-    if (RFB) {
       Data.RState = Rsp;
       //Serial.println(" rf ");
     } else if (RBB) {
