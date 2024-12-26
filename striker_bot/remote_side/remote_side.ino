@@ -2,7 +2,7 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
-
+const int deadzone = 30;
 
 const int RAxisPin = 33;
 const int LAxisPin = 25;
@@ -108,56 +108,54 @@ bool button_state(int a) {
 //   return true;
 // }
 
+int stick_value(int sp) {
+  int abs_sp = abs(sp);
+  int output = 0;
+
+  if (abs_sp <= deadzone) {  // Deadzone
+    output = 0;
+  } else if (abs_sp <= 200) {                // analog range
+    output = map(abs_sp, 31, 200, 70, 200);  // Scale to 1-127
+  } else {                                   // High speed range
+    output = 255;
+  }
+  return output;
+}
+
 void loop() {
-  Rvalue = button_state(RFButton);
-  LValue = button_state(LFButton);
+  Rvalue = analogRead(RAxisPin);
+  Lvalue = analogRead(LAxisPin);
 
-  RBB = button_state(RBButton);
-  LBB = button_state(LBButton);
+  Rsp = button_state(RSPButton);
+  Lsp = button_state(LSPButton);
 
-  Rsp = button_state(RSPButton)? 2 : 1;
-  Lsp = button_state(LSPButton)? 2 : 1;
+  Serial.print(Rvalue);
+  Serial.print(" ");
+  Serial.print(Lvalue);
+  Serial.print(" ");
 
-  if (!(RFB && RBB)) {
-      Data.RState = Rsp;
-      //Serial.println(" rf ");
-    } else if (RBB) {
-      Data.RState = -Rsp;
-      //Serial.println(" rb ");
-    } else {
-      Data.RState = 0;
-    }
-  } else {
-    Data.RState = 0;
-    //Serial.println(" rboth ");
+  Rvalue = stick_value(Rvalue);
+  Lvalue = stick_value(Lvalue);
+
+  if (Rsp && Lsp) {
+    Rvalue = 0;
+    Lvalue = 0;
+  } else if (Rsp) {
+    Rvalue = 255;
+    Lvalue = 255;
+  } else if (Lsp) {
+    Rvalue = -255;
+    Lvalue = -255;
   }
 
-  if (!(LFB && LBB)) {
-    if (LFB) {
-      Data.LState = Lsp;
-      //Serial.println(" lf ");
-    } else if (LBB) {
-      Data.LState = -Lsp;
-      // Serial.println(" lb ");
-    } else {
-      Data.LState = 0;
-    }
-  } 
-  else {
-    Data.LState = 0;
-    // Serial.println(" lboth ");
-  }
-
-  // Read the button value
-  //bValue = button_state(SPButton);
-  //delay(2);
-
+  Data.RState = Rvalue;
+  Data.LState = Lvalue;
+  
   Serial.print(Data.RState);
   Serial.print(" ");
   Serial.println(Data.LState);
 
-
-  // === Send message via ESP-NOW only if data changed ===
+  // === Send message via ESP-NOW ===
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&Data, sizeof(Data));
 
   if (result == ESP_OK) {
@@ -166,5 +164,5 @@ void loop() {
     Serial.println("Error");
   }
 
-  delay(20); 
+  delay(20);
 }

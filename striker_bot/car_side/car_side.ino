@@ -86,12 +86,7 @@ void commands() {
   Serial.print(" ");
   Serial.println(R);
 
-  if (R>1 ||R<-1){
-    analogWrite(SPA, 255);
-  }
-  else{
-    analogWrite(SPA, 120);
-  }
+  analogWrite(SPA, R);
 
 
   if (R > 0) {
@@ -105,13 +100,8 @@ void commands() {
   }
 
   //left side
-  if (L>1 || L<-1){
-    analogWrite(SPB, 255);
-  }
-  else{
-    analogWrite(SPB, 120);
-  }
-
+  analogWrite(SPB, L);
+ 
 
   if (L > 0 ) {
     MLF();
