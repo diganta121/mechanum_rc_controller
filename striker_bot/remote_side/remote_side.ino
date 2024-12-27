@@ -5,15 +5,15 @@
 const int deadzone = 30;
 
 const int RAxisPin = 33;
-const int LAxisPin = 25;
+const int LAxisPin = 32;
 
 const int LSPButton = 35;
 const int RSPButton = 34;
 
 #define LED_PIN 19
 
-int Rvalue = 125;
-int Lvalue = 125;
+int Rvalue = 0;
+int Lvalue = 0;
 
 // bool RFB = false;
 // bool RBB = false;
@@ -44,10 +44,47 @@ struct_message Data;
 struct_message PrevData;
 esp_now_peer_info_t peerInfo;
 
+// Variables to store default joystick positions (calibration offsets)
+int defaultRvalue = 0;
+int defaultLvalue = 0;
+
 // callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
   status == ESP_NOW_SEND_SUCCESS ? digitalWrite(LED_PIN, HIGH) : digitalWrite(LED_PIN, LOW);
+}
+
+
+// Function to calibrate joystick
+void calibrateJoystick() {
+    int totalR = 0, totalL = 0;
+    int samples = 7; // Number of samples to average for calibration
+
+    Serial.println("Calibrating joystick...");
+    for (int i = 0; i < samples; i++) {
+        totalR += analogReadSmooth(RAxisPin);
+        totalL += analogReadSmooth(LAxisPin);
+        delay(10); // Small delay between samples
+    }
+
+    // Calculate average default position
+    defaultRvalue = map(totalR / samples,4090,0,-255,255);
+    defaultLvalue = map(totalL / samples,0,4090,-255,255);
+    Serial.print("Default RAxis: ");
+    Serial.println(defaultRvalue);
+    Serial.print("Default LAxis: ");
+    Serial.println(defaultLvalue);
+}
+int climit(int n) {
+  if (n >= 255) {
+    return 255;
+  } 
+  else if (n <= -255) {
+    return -255;
+  } 
+  else {
+    return n;
+  }
 }
 
 void setup() {
@@ -86,6 +123,9 @@ void setup() {
     Serial.println("Failed to add peer");
     return;
   }
+
+  // Calibrate joystick
+  calibrateJoystick();
 }
 
 
@@ -97,6 +137,17 @@ bool button_state(int a) {
   }
   return (s > 2) ? true : false;
 }
+
+int analogReadSmooth(int pin) {
+    int total = 0;
+    for (int i = 0; i < 3; i++) {
+        total += analogRead(pin);
+        delay(5);
+    }
+    return total / 3;
+}
+
+
 
 // bool DataDiff(){
 //   // to check if Data and dataprev is different
@@ -114,17 +165,21 @@ int stick_value(int sp) {
 
   if (abs_sp <= deadzone) {  // Deadzone
     output = 0;
-  } else if (abs_sp <= 200) {                // analog range
-    output = map(abs_sp, 31, 200, 70, 200);  // Scale to 1-127
+  } else if (abs_sp <= 240) {                // analog range
+    output = map(abs_sp, 31, 200, 70, 250);  // Scale to 30-200
   } else {                                   // High speed range
     output = 255;
+  }
+
+  if (sp <0){
+    output *= -1;
   }
   return output;
 }
 
 void loop() {
-  Rvalue = analogRead(RAxisPin);
-  Lvalue = analogRead(LAxisPin);
+  Rvalue = analogReadSmooth(RAxisPin);
+  Lvalue = analogReadSmooth(LAxisPin);
 
   Rsp = button_state(RSPButton);
   Lsp = button_state(LSPButton);
@@ -134,35 +189,35 @@ void loop() {
   Serial.print(Lvalue);
   Serial.print(" ");
 
-  Rvalue = stick_value(Rvalue);
-  Lvalue = stick_value(Lvalue);
+  Rvalue = climit(stick_value(map(Rvalue,4090,0,-255,255)-defaultRvalue)); // reversed //stick_value(Rvalue);
+  Lvalue = climit(stick_value(map(Lvalue,0,4090,-255,255)-defaultLvalue));//stick_value(Lvalue);
 
-  if (Rsp && Lsp) {
-    Rvalue = 0;
-    Lvalue = 0;
-  } else if (Rsp) {
-    Rvalue = 255;
-    Lvalue = 255;
-  } else if (Lsp) {
-    Rvalue = -255;
-    Lvalue = -255;
-  }
+  // if (Rsp && Lsp) {
+  //   Rvalue = 0;
+  //   Lvalue = 0;
+  // } else if (Rsp) {
+  //   Rvalue = 255;
+  //   Lvalue = 255;
+  // } else if (Lsp) {
+  //   Rvalue = -255;
+  //   Lvalue = -255;
+  // }
 
   Data.RState = Rvalue;
   Data.LState = Lvalue;
   
-  Serial.print(Data.RState);
+  Serial.print(Rvalue);
   Serial.print(" ");
-  Serial.println(Data.LState);
+  Serial.println(Lvalue);
 
   // === Send message via ESP-NOW ===
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&Data, sizeof(Data));
 
   if (result == ESP_OK) {
-    Serial.println("Sent");
+    Serial.println("S");
   } else {
-    Serial.println("Error");
+    Serial.println("E");
   }
 
-  delay(20);
+  delay(5);
 }

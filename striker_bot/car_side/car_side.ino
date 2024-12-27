@@ -86,33 +86,32 @@ void commands() {
   Serial.print(" ");
   Serial.println(R);
 
-  analogWrite(SPA, R);
 
 
-  if (R > 0) {
+  if (R > 10) {
     MRF();
   } 
-  else if (R < 0) {
+  else if (R < -10) {
     MRB();
   } 
   else {
     MRS();
   }
+  analogWrite(SPA, R);
+
 
   //left side
-  analogWrite(SPB, L);
- 
-
-  if (L > 0 ) {
+  if (L > 10 ) {
     MLF();
   } 
-  else if (L < 0) {
+  else if (L < -10) {
     MLB();
   }
    else {
     MLS();
   }
-
+  analogWrite(SPB, L);
+ 
 }
 
 void MRF() {
