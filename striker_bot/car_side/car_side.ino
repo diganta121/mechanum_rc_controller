@@ -97,7 +97,13 @@ void commands() {
   else {
     MRS();
   }
+  
+  if(R<0){
+  analogWrite(-SPA, R);
+  }
+  else{
   analogWrite(SPA, R);
+  }
 
 
   //left side
@@ -110,8 +116,13 @@ void commands() {
    else {
     MLS();
   }
+
+  if(L<0){
+  analogWrite(-SPB, L);
+  }
+  else{
   analogWrite(SPB, L);
- 
+  } 
 }
 
 void MRF() {
