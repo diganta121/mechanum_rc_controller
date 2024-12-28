@@ -51,9 +51,17 @@ int defaultLvalue = 0;
 // callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
-  status == ESP_NOW_SEND_SUCCESS ? digitalWrite(LED_PIN, HIGH) : digitalWrite(LED_PIN, LOW);
+  status == ESP_NOW_SEND_SUCCESS ? digitalWrite(LED_PIN, HIGH) : errBlink();
 }
 
+void errBlink(){
+  for (int i = 0; i < 3; i++) {  // Blink LED for failure
+    digitalWrite(LED_PIN, HIGH);
+    delay(50);
+    digitalWrite(LED_PIN, LOW);
+    delay(100);
+  }
+}
 
 // Function to calibrate joystick
 void calibrateJoystick() {
@@ -165,9 +173,10 @@ int stick_value(int sp) {
 
   if (abs_sp <= deadzone) {  // Deadzone
     output = 0;
-  } else if (abs_sp <= 240) {                // analog range
-    output = map(abs_sp, 31, 200, 70, 250);  // Scale to 30-200
-  } else {                                   // High speed range
+  } else if (abs_sp <= 250) {                // analog range
+    output = map(abs_sp, 31, 255, 70, 255);  // Scale to 70-280
+  }
+  else{
     output = 255;
   }
 
@@ -189,8 +198,8 @@ void loop() {
   Serial.print(Lvalue);
   Serial.print(" ");
 
-  Rvalue = climit(stick_value(map(Rvalue,4090,0,-255,255)-defaultRvalue)); // reversed //stick_value(Rvalue);
-  Lvalue = climit(stick_value(map(Lvalue,0,4090,-255,255)-defaultLvalue));//stick_value(Lvalue);
+  Rvalue = climit(stick_value(map(Rvalue,4095,0,-280,280)-defaultRvalue)); // reversed //stick_value(Rvalue);
+  Lvalue = climit(stick_value(map(Lvalue,4095,0,280,-280)-defaultLvalue));//stick_value(Lvalue);
 
   if (Rsp && Lsp) {
     Rvalue = 0;
@@ -199,8 +208,8 @@ void loop() {
     Rvalue = 255;
     Lvalue = 255;
   } else if (Lsp) {
-    Rvalue = -255;
-    Lvalue = -255;
+    Rvalue = Rvalue/2;
+    Lvalue = Lvalue/2;
   }
 
   Data.RState = Rvalue;
