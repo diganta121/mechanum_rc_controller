@@ -181,8 +181,8 @@ void loop() {
   Rvalue = analogReadSmooth(RAxisPin);
   Lvalue = analogReadSmooth(LAxisPin);
 
-  Rsp = button_state(RSPButton);
-  Lsp = button_state(LSPButton);
+  Rsp = !button_state(RSPButton);
+  Lsp = !button_state(LSPButton);
 
   Serial.print(Rvalue);
   Serial.print(" ");
@@ -192,16 +192,16 @@ void loop() {
   Rvalue = climit(stick_value(map(Rvalue,4090,0,-255,255)-defaultRvalue)); // reversed //stick_value(Rvalue);
   Lvalue = climit(stick_value(map(Lvalue,0,4090,-255,255)-defaultLvalue));//stick_value(Lvalue);
 
-  // if (Rsp && Lsp) {
-  //   Rvalue = 0;
-  //   Lvalue = 0;
-  // } else if (Rsp) {
-  //   Rvalue = 255;
-  //   Lvalue = 255;
-  // } else if (Lsp) {
-  //   Rvalue = -255;
-  //   Lvalue = -255;
-  // }
+  if (Rsp && Lsp) {
+    Rvalue = 0;
+    Lvalue = 0;
+  } else if (Rsp) {
+    Rvalue = 255;
+    Lvalue = 255;
+  } else if (Lsp) {
+    Rvalue = -255;
+    Lvalue = -255;
+  }
 
   Data.RState = Rvalue;
   Data.LState = Lvalue;
