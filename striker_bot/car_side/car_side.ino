@@ -4,10 +4,11 @@
 #include <WiFi.h>
 #include <esp_wifi.h>
 
+change pins and try
 
 //motor
 #define A1 21
-#define A2 23
+#define A2 23  
 #define B1 18
 #define B2 19
 #define SPA 13
