@@ -1,24 +1,26 @@
 //pins
 const int flP = 1;  // p side
-const int frP = 2;
-const int blP = 3;
-const int brP = 4;
+const int frP = 3;
 
-const int flN = 5;  // N side
-const int frN = 6;
-const int blN = 7;
-const int brN = 8;
+const int blP = 7;
+const int brP = 9;
 
-const int enfl = 9;  //enable pins
-const int enfr = 10;
-const int enbl = 11;
-const int enbr = 12;
+const int flN = 2;  // N side
+const int frN = 4;
+
+const int blN = 8;
+const int brN = 10;
+
+const int enfl = 10;  //enable pins
+const int enfr = 11;
+const int enbl = 5;
+const int enbr = 6;
 
 const int ch_speed = 28;  //rc pins
 const int ch_strafe = 27;
 const int ch_rotate = 26;
 
-const int deadzone = 5;
+const int deadzone =  10;
 
 int speed = 0;
 int strafe = 0;
@@ -60,16 +62,28 @@ void setup() {
 
 void loop() {
   int speed_inp = pulseIn(ch_speed, HIGH);
-  speed = map(speed_inp, 1000, 2000, -255, 255);
+  speed = map(speed_inp, 1160, 1900, -255, 255);
 
   int strafe_inp = pulseIn(ch_strafe, HIGH);
-  strafe = map(strafe_inp, 1000, 2000, -255, 255);
+  strafe = map(strafe_inp, 1930, 1050, -255, 255);
 
   rotate_inp = pulseIn(ch_rotate, HIGH);
-  rotate = map(rotate_inp, 1000, 2000, -255, 255);
+  rotate = map(rotate_inp,1160, 1850, -255, 255);
+
+  // Serial.print(speed_inp);
+  // Serial.print(" ");
+  // Serial.print(strafe_inp); 
+  // Serial.print(" ");
+
+  // Serial.print(rotate_inp);
+  // Serial.print("  ");
 
   Serial.print(speed);
-  Serial.print(strafe);
+  Serial.print(" ");
+
+  Serial.print(strafe);  
+  Serial.print(" ");
+
   Serial.print(rotate);
 
   // Loop continuously if kill switch pressed
@@ -83,21 +97,23 @@ void loop() {
   bls = climt(speed - strafe + rotate);   // map(sParams[2].toInt(), -99, 99, 1000, 2000);   //Back left speed
   brs = climt(speed + strafe - rotate);   // map(sParams[3].toInt(), -99, 99, 1000, 2000);   //Back right speed
 
+  Serial.print(" ");
   Serial.print(flss);
+  Serial.print("  ");
+
   Serial.print(frs);
-  Serial.print(bls);
-  Serial.print(brs); //ln
+  Serial.print(" ");
 
-  Serial.print(speed_inp);
-  Serial.print(strafe_inp);
-  Serial.print(rotate_inp);
+  Serial.print(bls);  
+  Serial.print(" ");
 
+  Serial.println(brs);  
 
-  // motor_move(flss,flP,flN,enfl);
-  // motor_move(frs,frP,frN,enfr);
+  motor_move(flss,flP,flN,enfl);
+  motor_move(frs,frP,frN,enfr);
 
-  // motor_move(bls,blP,blN,enbl);
-  // motor_move(brs,brP,brN,enbr);
+  motor_move(bls,blP,blN,enbl);
+  motor_move(brs,brP,brN,enbr);
 }
 
 int climt(int n) {
@@ -113,17 +129,32 @@ int climt(int n) {
 }
 
 void motor_move(int sp, int p, int n, int enpin) {
+  int abs_sp = abs(sp);
+  int output = 0;
+
+  if (abs_sp <= 30) {  // Deadzone
+    output = 0;
+  } else if (abs_sp <= 100) {  // Low speed range
+    output = map(abs_sp, 31, 100, 1, 127); // Scale to 1-127
+  } else if (abs_sp <= 200) {  // Medium speed range
+    output = map(abs_sp, 101, 200, 128, 200); // Scale to 128-200
+  } else {  // High speed range
+    output = 255;
+  }
+
   if (sp < -deadzone) {
     digitalWrite(p, LOW);
     digitalWrite(n, HIGH);
-    analogWrite(enpin, -sp);
-  }
-  else if (sp > deadzone) {
+    analogWrite(enpin, output);
+  } else if (sp > deadzone) {
     digitalWrite(p, HIGH);
     digitalWrite(n, LOW);
-    analogWrite(enpin, sp);
+    analogWrite(enpin, output);
+  } else {  // Within deadzone, stop the motor
+    digitalWrite(p, LOW);
+    digitalWrite(n, LOW);
+    analogWrite(enpin, 0);
   }
-  // elif else
 }
 
 // void stop() {
