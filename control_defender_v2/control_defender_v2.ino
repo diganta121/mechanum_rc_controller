@@ -11,9 +11,9 @@ const int ch_acc = 22;  // RC pins
 const int ch_side = 23;
 const int ch_throttle = 4;
 
-const int deadzonea = 30;
-const int deadzones = 30;
-const int timeout = 2000; // Timeout in milliseconds
+const int deadzonea = 100;
+const int deadzones = 100;
+const int timeout = 25000; // Timeout in milliseconds
 
 int acc = 0;
 int side = 0;
@@ -43,9 +43,9 @@ void setup() {
 
 void loop() {
   // Read inputs
-  int acc_inp = pulseIn(ch_acc, HIGH);
-  int side_inp = pulseIn(ch_side, HIGH);
-  int throttle_inp = pulseIn(ch_throttle, HIGH);
+  int acc_inp = pulseIn(ch_acc, HIGH,timeout);
+  int side_inp = pulseIn(ch_side, HIGH,timeout);
+  int throttle_inp = pulseIn(ch_throttle, HIGH,timeout);
 
   if (acc_inp == 0 || side_inp == 0 || throttle_inp == 0) {
     // No valid signal received, stop the motors
@@ -68,13 +68,6 @@ void loop() {
   acc = map(acc_inp, 1160, 1900, -255, 255);
   side = map(side_inp, 1930, 1050, -255, 255);
 
-  // Debugging
-  Serial.print("Throttle: ");
-  Serial.print(throttle);
-  Serial.print(" ACC: ");
-  Serial.print(acc);
-  Serial.print(" SIDE: ");
-  Serial.println(side);
 
   // Map throttle to low-resolution values
   int throttle_res = map_to_low_res(throttle);
@@ -84,28 +77,44 @@ void loop() {
   // Determine motor speeds based on inputs
   if (abs(acc) < deadzonea && abs(side) > deadzones) {
     // Tank turn
-    Lmotor = climt(throttle + side);
-    Rmotor = climt(throttle - side);
+    Lmotor = climt(+side);
+    Rmotor = climt(-side);
   } else if (abs(acc) > deadzonea && abs(side) > deadzones) {
     // Moving while turning
-    Lmotor = climt(throttle + acc + side / 2);
-    Rmotor = climt(throttle + acc - side / 2);
+    Lmotor = climt(acc + side / 2);
+    Rmotor = climt(acc - side / 2);
+    analogWrite(enfl, climt(throttle_res-side/2));
+    analogWrite(enfr, climt(throttle_res+side/2));
+    
   } else if (abs(acc) > deadzonea && abs(side) < deadzones) {
     // Straight movement
-    Lmotor = climt(throttle + acc);
-    Rmotor = climt(throttle + acc);
+    Lmotor = climt(acc);
+    Rmotor = climt(acc);
   } else {
     // Stop
     Lmotor = 0;
     Rmotor = 0;
   }
 
+
+  // Debugging
+  Serial.print("Throttle: ");
+  Serial.print(throttle_res);
+  Serial.print(" ACC: ");
+  Serial.print(acc);
+  Serial.print(" SIDE: ");
+  Serial.print(side);
+  Serial.print("L: ");
+  Serial.print(Lmotor);
+  Serial.print("R: ");
+  Serial.println(Rmotor);
+
+
   // Move the motors
   motor_move(Lmotor, flP, flN);
   motor_move(Rmotor, frP, frN);
 
-  delay(10); // Small delay for stability
-
+  delay(5);
   // Timeout check
   if (millis() - last_signal_time > timeout) {
     stop_motors();
@@ -135,9 +144,9 @@ void motor_move(int sp, int p, int n) {
 
 int map_to_low_res(int value) {
   if (value <= 50) return 0;
-  else if (value <= 100) return 70;
-  else if (value <= 150) return 120;
-  else if (value <= 200) return 190;
+  else if (value <= 220) {
+    return map(value,50,200,90,240);
+  }
   else return 255;
 }
 
@@ -149,4 +158,5 @@ void stop_motors() {
   analogWrite(enfl, 0);
   analogWrite(enfr, 0);
   Serial.println("Motors stopped due to no signal.");
+  delay(10);
 }
