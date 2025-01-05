@@ -76,8 +76,8 @@ void calibrateJoystick() {
     }
 
     // Calculate average default position
-    defaultRvalue = map(totalR / samples,4090,0,-255,255);
-    defaultLvalue = map(totalL / samples,0,4090,-255,255);
+    defaultRvalue = map(totalR / samples,4095,0,-255,255);
+    defaultLvalue = map(totalL / samples,0,4095,-255,255);
     Serial.print("Default RAxis: ");
     Serial.println(defaultRvalue);
     Serial.print("Default LAxis: ");
@@ -198,16 +198,14 @@ void loop() {
   Serial.print(Lvalue);
   Serial.print(" ");
 
-  Rvalue = climit(stick_value(map(Rvalue,4095,0,-280,280)-defaultRvalue)); // reversed //stick_value(Rvalue);
-  Lvalue = climit(stick_value(map(Lvalue,4095,0,280,-280)-defaultLvalue));//stick_value(Lvalue);
+  Rvalue = climit(stick_value(map(Rvalue,4095,0,-255,255)-defaultRvalue)); // reversed //stick_value(Rvalue);
+  Lvalue = climit(stick_value(map(Lvalue,4095,0,255,-255)-defaultLvalue));//stick_value(Lvalue);
 
-  if (Rsp && Lsp) {
-    Rvalue = 0;
-    Lvalue = 0;
-  } else if (Rsp) {
+  if (Rsp) {
     Rvalue = 255;
     Lvalue = 255;
-  } else if (Lsp) {
+  }
+  if (Lsp) {
     Rvalue = Rvalue/2;
     Lvalue = Lvalue/2;
   }

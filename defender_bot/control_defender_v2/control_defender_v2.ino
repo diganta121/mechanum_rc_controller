@@ -44,7 +44,7 @@ typedef struct struct_message {
   int side;
 } struct_message;
 
-struct_message myData = { 0, 0 };
+struct_message myData = { 0, 0, 0 };
 
 void OnDataRecv(const esp_now_recv_info_t *recv_info, const uint8_t *incomingData, int len) {
   if (len == sizeof(myData)) {
@@ -94,8 +94,8 @@ void loop() {
     lastCommandTime = millis();
   }
   if (currMilis - lastCommandTime2 > 2000) {
-    myData.RState = 0;
-    myData.LState = 0;
+    myData.Throttle = 0;
+    myData.acc = 0;
     lastCommandTime2 = millis();
   }
 }
@@ -103,9 +103,9 @@ void loop() {
 void commands() {
   last_signal_time = millis();
 
-  throttle = myData.Throttle //map(throttle_inp, 1160, 1900, 0, 255);
-  acc = myData.acc //map(acc_inp, 1160, 1900, -255, 255);
-  side = myData.side //map(side_inp, 1930, 1050, -255, 255);
+  throttle = myData.Throttle; //map(throttle_inp, 1160, 1900, 0, 255);
+  acc = myData.acc; //map(acc_inp, 1160, 1900, -255, 255);
+  side = myData.side; //map(side_inp, 1930, 1050, -255, 255);
 
 
   // Map throttle to low-resolution values
@@ -156,6 +156,7 @@ void commands() {
   delay(5);
   // Timeout check
   if (millis() - last_signal_time > timeout) {
+    
     stop_motors();
   }
 }
