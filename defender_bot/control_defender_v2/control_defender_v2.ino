@@ -1,3 +1,7 @@
+#include <esp_now.h>
+#include <WiFi.h>
+#include <esp_wifi.h>
+
 // Pins
 const int flP = 33;
 const int flN = 25;
@@ -25,6 +29,32 @@ int Rmotor = 0;
 
 unsigned long last_signal_time = 0;
 
+const unsigned int commandInterval = 25;  // Equivalent to delaytime
+unsigned long lastCommandTime = 0;
+
+unsigned long lastCommandTime2 = 0; // for lost contact
+unsigned long currMilis =0;
+
+
+uint8_t newMACAddress[] = { 0x36, 0x69, 0x2B, 0xFC, 0x4D, 0x3F };
+
+typedef struct struct_message {
+  int Throttle;
+  int acc;
+  int side;
+} struct_message;
+
+struct_message myData = { 0, 0 };
+
+void OnDataRecv(const esp_now_recv_info_t *recv_info, const uint8_t *incomingData, int len) {
+  if (len == sizeof(myData)) {
+    memcpy(&myData, incomingData, sizeof(myData));
+  } else {
+    Serial.println("Received data size mismatch!");
+  }
+}
+
+
 void setup() {
   pinMode(flP, OUTPUT);
   pinMode(flN, OUTPUT);
@@ -38,35 +68,44 @@ void setup() {
   pinMode(ch_throttle, INPUT);
 
   Serial.begin(115200);
-  Serial.println("Bot started");
-}
 
-void loop() {
-  // Read inputs
-  int acc_inp = pulseIn(ch_acc, HIGH,timeout);
-  int side_inp = pulseIn(ch_side, HIGH,timeout);
-  int throttle_inp = pulseIn(ch_throttle, HIGH,timeout);
-
-  if (acc_inp == 0 || side_inp == 0 || throttle_inp == 0) {
-    // No valid signal received, stop the motors
-      // Debugging
-    Serial.print("no sig- Thr: ");
-    Serial.print(throttle_inp);
-    Serial.print(" ACC: ");
-    Serial.print(acc_inp);
-    Serial.print(" SIDE: ");
-    Serial.println(side_inp);
-    Serial.print(" ");
-
-    stop_motors();
-    return;
+  WiFi.mode(WIFI_STA);
+  Serial.println("Started");
+    // Change ESP32 Mac Address
+  if (esp_wifi_set_mac(WIFI_IF_STA, newMACAddress) != ESP_OK) {
+    Serial.println("Failed to set MAC address");
+  } else {
+    Serial.println("MAC address changed successfully");
   }
 
+  // Initialize ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+  esp_now_register_recv_cb(OnDataRecv);
+  Serial.println("Bot started");
+
+}
+void loop() {
+  currMilis = millis();
+  if (currMilis - lastCommandTime > commandInterval) {
+    commands();
+    lastCommandTime = millis();
+  }
+  if (currMilis - lastCommandTime2 > 2000) {
+    myData.RState = 0;
+    myData.LState = 0;
+    lastCommandTime2 = millis();
+  }
+}
+
+void commands() {
   last_signal_time = millis();
 
-  throttle = map(throttle_inp, 1160, 1900, 0, 255);
-  acc = map(acc_inp, 1160, 1900, -255, 255);
-  side = map(side_inp, 1930, 1050, -255, 255);
+  throttle = myData.Throttle //map(throttle_inp, 1160, 1900, 0, 255);
+  acc = myData.acc //map(acc_inp, 1160, 1900, -255, 255);
+  side = myData.side //map(side_inp, 1930, 1050, -255, 255);
 
 
   // Map throttle to low-resolution values

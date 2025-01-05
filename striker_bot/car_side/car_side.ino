@@ -69,7 +69,7 @@ void loop() {
     commands();
     lastCommandTime = millis();
   }
- else if (currMilis - lastCommandTime2 > 2000) {
+  if (currMilis - lastCommandTime2 > 2000) {
     myData.RState = 0;
     myData.LState = 0;
     lastCommandTime2 = millis();
