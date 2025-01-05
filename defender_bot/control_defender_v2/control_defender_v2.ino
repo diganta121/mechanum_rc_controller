@@ -2,12 +2,10 @@
 #include <WebServer.h>
 
 // Motor pins
-#define A1 21
-#define A2 23
-#define B1 32
-#define B2 33
-#define SPA 13
-#define SPB 14
+#define FLP 33  // Front Left Positive
+#define FLN 25  // Front Left Negative
+#define FRP 27  // Front Right Positive
+#define FRN 26  // Front Right Negative
 
 // Network credentials
 const char* ssid = "Cheese_bot";
@@ -29,12 +27,10 @@ void setup() {
   Serial.begin(115200);
   
   // Motor pin setup
-  pinMode(A1, OUTPUT);
-  pinMode(A2, OUTPUT);
-  pinMode(B1, OUTPUT);
-  pinMode(B2, OUTPUT);
-  pinMode(SPA, OUTPUT);
-  pinMode(SPB, OUTPUT);
+  pinMode(FLP, OUTPUT);
+  pinMode(FLN, OUTPUT);
+  pinMode(FRP, OUTPUT);
+  pinMode(FRN, OUTPUT);
 
   // Create AP
   WiFi.softAP(ssid, password);
@@ -68,9 +64,9 @@ void handleRoot() {
       <style>
         body {
           margin: 0;
-          padding: 20px;
+          padding: 10px;
           display: flex;
-          justify-content: center;
+          justify-content: space-between;
           align-items: center;
           min-height: 100vh;
           background: #f0f0f0;
@@ -78,12 +74,23 @@ void handleRoot() {
         }
         .container {
           display: flex;
-          gap: 20px;
+          width: 100%;
+          justify-content: space-between;
         }
         .column {
           display: flex;
           flex-direction: column;
           gap: 10px;
+        }
+        .left-controls {
+          display: flex;
+          gap: 10px;
+          margin-left: 10px;
+        }
+        .right-controls {
+          display: flex;
+          gap: 10px;
+          margin-right: 10px;
         }
         button {
           width: 120px;
@@ -95,6 +102,8 @@ void handleRoot() {
           font-size: 16px;
           cursor: pointer;
           transition: background 0.3s;
+          padding: 10px;
+          text-align: center;
         }
         button:active {
           background: #0056b3;
@@ -103,17 +112,25 @@ void handleRoot() {
     </head>
     <body>
       <div class='container'>
-        <div class='column'>
-          <button onmousedown='control("L", 255)' onmouseup='control("L", 0)' ontouchstart='control("L", 255)' ontouchend='control("L", 0)'>Left Full Forward</button>
-          <button onmousedown='control("L", 128)' onmouseup='control("L", 0)' ontouchstart='control("L", 128)' ontouchend='control("L", 0)'>Left Half Forward</button>
-          <button onmousedown='control("L", -128)' onmouseup='control("L", 0)' ontouchstart='control("L", -128)' ontouchend='control("L", 0)'>Left Half Back</button>
-          <button onmousedown='control("L", -255)' onmouseup='control("L", 0)' ontouchstart='control("L", -255)' ontouchend='control("L", 0)'>Left Full Back</button>
+        <div class='left-controls'>
+          <div class='column'>
+            <button onmousedown='control("L", 255)' onmouseup='control("L", 0)' ontouchstart='control("L", 255)' ontouchend='control("L", 0)'>Left Full Forward</button>
+            <button onmousedown='control("L", -255)' onmouseup='control("L", 0)' ontouchstart='control("L", -255)' ontouchend='control("L", 0)'>Left Full Back</button>
+          </div>
+          <div class='column'>
+            <button onmousedown='control("L", 128)' onmouseup='control("L", 0)' ontouchstart='control("L", 128)' ontouchend='control("L", 0)'>Left Half Forward</button>
+            <button onmousedown='control("L", -128)' onmouseup='control("L", 0)' ontouchstart='control("L", -128)' ontouchend='control("L", 0)'>Left Half Back</button>
+          </div>
         </div>
-        <div class='column'>
-          <button onmousedown='control("R", 255)' onmouseup='control("R", 0)' ontouchstart='control("R", 255)' ontouchend='control("R", 0)'>Right Full Forward</button>
-          <button onmousedown='control("R", 128)' onmouseup='control("R", 0)' ontouchstart='control("R", 128)' ontouchend='control("R", 0)'>Right Half Forward</button>
-          <button onmousedown='control("R", -128)' onmouseup='control("R", 0)' ontouchstart='control("R", -128)' ontouchend='control("R", 0)'>Right Half Back</button>
-          <button onmousedown='control("R", -255)' onmouseup='control("R", 0)' ontouchstart='control("R", -255)' ontouchend='control("R", 0)'>Right Full Back</button>
+        <div class='right-controls'>
+          <div class='column'>
+            <button onmousedown='control("R", 128)' onmouseup='control("R", 0)' ontouchstart='control("R", 128)' ontouchend='control("R", 0)'>Right Half Forward</button>
+            <button onmousedown='control("R", -128)' onmouseup='control("R", 0)' ontouchstart='control("R", -128)' ontouchend='control("R", 0)'>Right Half Back</button>
+          </div>
+          <div class='column'>
+            <button onmousedown='control("R", 255)' onmouseup='control("R", 0)' ontouchstart='control("R", 255)' ontouchend='control("R", 0)'>Right Full Forward</button>
+            <button onmousedown='control("R", -255)' onmouseup='control("R", 0)' ontouchstart='control("R", -255)' ontouchend='control("R", 0)'>Right Full Back</button>
+          </div>
         </div>
       </div>
       <script>
@@ -157,25 +174,19 @@ void commands() {
   // Right side motor control
   if (R > 10) {
     MRF();
-    analogWrite(SPA, R);
   } else if (R < -10) {
     MRB();
-    analogWrite(SPA, -R);
   } else {
     MRS();
-    analogWrite(SPA, 0);
   }
 
   // Left side motor control
   if (L > 10) {
     MLF();
-    analogWrite(SPB, L);
   } else if (L < -10) {
     MLB();
-    analogWrite(SPB, -L);
   } else {
     MLS();
-    analogWrite(SPB, 0);
   }
 
   Serial.print("L: ");
@@ -185,31 +196,31 @@ void commands() {
 }
 
 void MRF() {
-  digitalWrite(A1, HIGH);
-  digitalWrite(A2, LOW);
+  digitalWrite(FRP, HIGH);
+  digitalWrite(FRN, LOW);
 }
 
 void MRB() {
-  digitalWrite(A1, LOW);
-  digitalWrite(A2, HIGH);
+  digitalWrite(FRP, LOW);
+  digitalWrite(FRN, HIGH);
 }
 
 void MRS() {
-  digitalWrite(A1, LOW);
-  digitalWrite(A2, LOW);
+  digitalWrite(FRP, LOW);
+  digitalWrite(FRN, LOW);
 }
 
 void MLF() {
-  digitalWrite(B1, HIGH);
-  digitalWrite(B2, LOW);
+  digitalWrite(FLP, HIGH);
+  digitalWrite(FLN, LOW);
 }
 
 void MLB() {
-  digitalWrite(B1, LOW);
-  digitalWrite(B2, HIGH);
+  digitalWrite(FLP, LOW);
+  digitalWrite(FLN, HIGH);
 }
 
 void MLS() {
-  digitalWrite(B1, LOW);
-  digitalWrite(B2, LOW);
+  digitalWrite(FLP, LOW);
+  digitalWrite(FLN, LOW);
 }
