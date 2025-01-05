@@ -2,7 +2,7 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
-const int deadzone = 30;
+const int deadzone = 35;
 
 const int RAxisPin = 33;
 const int LAxisPin = 32;
@@ -131,7 +131,7 @@ void setup() {
     Serial.println("Failed to add peer");
     return;
   }
-
+  
   // Calibrate joystick
   calibrateJoystick();
 }
@@ -198,10 +198,10 @@ void loop() {
   Serial.print(Lvalue);
   Serial.print(" ");
 
-  Rvalue = climit(stick_value(map(Rvalue,4095,0,-255,255)-defaultRvalue)); // reversed //stick_value(Rvalue);
-  Lvalue = climit(stick_value(map(Lvalue,4095,0,255,-255)-defaultLvalue));//stick_value(Lvalue);
+  Rvalue = climit(stick_value(map(Rvalue,4095,0,-255,255))); // reversed //stick_value(Rvalue);
+  Lvalue = climit(stick_value(map(Lvalue,4095,0,255,-255)));//stick_value(Lvalue);
 
-  if (Rsp) {
+  if (Rsp), {
     Rvalue = 255;
     Lvalue = 255;
   }

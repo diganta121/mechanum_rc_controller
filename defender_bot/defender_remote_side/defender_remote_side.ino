@@ -2,7 +2,7 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
-const int deadzone = 30;
+const int deadzone = 120;
 
 const int accAxisPin = 35;
 const int sideAxisPin = 34;
@@ -18,6 +18,13 @@ int throt = 0;
 
 int Lsp = 1;
 
+int lthrot = 0;
+int lacc = 0;
+int lside = 0;
+
+int mthrot = 0;
+int macc = 0;
+int mside = 0;
 
 // REPLACE WITH RECEIVER MAC Address
 uint8_t broadcastAddress[] =  { 0x36, 0x69, 0x2B, 0xFC, 0x4D, 0x3F };
@@ -37,11 +44,10 @@ struct_message Data;
 struct_message PrevData;
 esp_now_peer_info_t peerInfo;
 
-// Variables to store default joystick positions (calibration offsets)
 int defaultacc = 0;
+// Variables to store default joystick positions (calibration offsets)
 int defaultside = 0;
 int defaultThrot = 0;
-
 
 // callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
@@ -56,6 +62,21 @@ void errBlink(){
     digitalWrite(LED_PIN, LOW);
     delay(100);
   }
+}
+
+void calibrateMinJoystick(){
+  digitalWrite(LED_PIN, HIGH);
+  delay(2000);
+  lthrot = analogRead(throtAxisPin);
+  lacc = analogRead(throtAxisPin);
+  lside = analogRead(throtAxisPin);
+  errBlink();
+  delay(2000);
+  digitalWrite(LED_PIN, HIGH);
+  mthrot = analogRead(throtAxisPin);
+  macc = analogRead(throtAxisPin);
+  mside = analogRead(throtAxisPin);
+  digitalWrite(LED_PIN, LOW);
 }
 
 // Function to calibrate joystick
@@ -73,9 +94,9 @@ void calibrateJoystick() {
     }
 
     // Calculate average default position
-    defaultacc = climit(map(totalAcc / samples,3100,700,255,-255));
-    defaultside = climit(map(totalSide / samples,550,3400,-255,255));
-    defaultThrot = climit(map(totalThrot / samples,500,3000,-255,255));
+    defaultacc = climit(map(totalAcc / samples,lacc,macc,255,-255));
+    defaultside = climit(map(totalSide / samples,lside,mside,-255,255));
+    defaultThrot = climit(map(totalThrot / samples,lthrot,mside,-255,255));
 
     delay(50);
     Serial.print("Default accAxis: ");
@@ -85,6 +106,10 @@ void calibrateJoystick() {
     Serial.print("Default ThrotAxis: ");
     Serial.println(defaultThrot);
 }
+int binStickVal(int n){
+
+}
+
 int climit(int n) {
   if (n >= 255) {
     return 255;
@@ -134,6 +159,8 @@ void setup() {
   }
 
   // Calibrate joystick
+  calibrateMinJoystick();
+  delay(5);
   calibrateJoystick();
 }
 
@@ -176,42 +203,47 @@ int stick_value(int sp) {
   return output;
 }
 
+
 void loop() {
-  acc = analogReadSmooth(accAxisPin);
-  side = analogReadSmooth(sideAxisPin);
+  // Read analog values for throttle only
   throt = analogReadSmooth(throtAxisPin);
 
+  // Check if the values of acc and side are above the limit (e.g., deadzone)
+  int accRaw = analogRead(accAxisPin);
+  int sideRaw = analogRead(sideAxisPin);
+  
+  // Define a threshold limit for acc and side to switch them to digital
+  int accThreshold = 500; // Adjust this threshold as needed
+  int sideThreshold = 500; // Adjust this threshold as needed
+
+  // Set acc and side to 255 if they exceed the threshold, otherwise set to 0
+  acc = (accRaw > accThreshold) ? 255 : 0;
+  side = (sideRaw > sideThreshold) ? 255 : 0;
+
+  // Process throttle value with analog mapping
+  throt = climit(stick_value(map(throt, lthrot, mthrot, 0, 255)));
+
+  // Apply logic to halve acc if LSPButton is pressed
   Lsp = !button_state(LSPButton);
-
-  Serial.print(acc);
-  Serial.print(" ");
-  Serial.print(side);
-  Serial.print(" ");
-  Serial.print(throt);
-  Serial.print(" ");
-
-  // defaultacc = climit(map(totalAcc / samples,3050,580,-255,255));
-  // defaultside = climit(map(totalSide / samples,550,3700,-255,255));
-  // defaultThrot = climit(map(totalThrot / samples,500,3000,-255,255));
-  acc = climit(stick_value(map(acc,3050,580,-255,255)-defaultacc)); // reversed //stick_value(acc);
-  side = climit(stick_value(map(side,550,3700,-255,255)-defaultside));//stick_value(side);
-  throt = climit(stick_value(map(throt,500,3000,0,255)));//stick_value(side);
-
   if (Lsp) {
-    acc = acc/2;
+    acc = acc / 2;
   }
 
+  // Prepare data to send
   Data.acc = acc;
   Data.side = side;
-  Data.side = side;
-  
-  Serial.print(acc);
-  Serial.print(" ");
-  Serial.print(side);
-  Serial.print(" ");
-  Serial.println(throt);
-  // === Send message via ESP-NOW ===
+  Data.throt = throt;
+
+  // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&Data, sizeof(Data));
+
+  // Output the result
+  Serial.print("Acc: ");
+  Serial.print(acc);
+  Serial.print(" Side: ");
+  Serial.print(side);
+  Serial.print(" Throt: ");
+  Serial.println(throt);
 
   if (result == ESP_OK) {
     Serial.println("S");
