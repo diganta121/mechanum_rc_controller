@@ -203,22 +203,37 @@ int stick_value(int sp) {
   return output;
 }
 
-
 void loop() {
   // Read analog values for throttle only
   throt = analogReadSmooth(throtAxisPin);
 
-  // Check if the values of acc and side are above the limit (e.g., deadzone)
+  // Read raw analog values for acc and side
   int accRaw = analogRead(accAxisPin);
   int sideRaw = analogRead(sideAxisPin);
   
-  // Define a threshold limit for acc and side to switch them to digital
-  int accThreshold = 500; // Adjust this threshold as needed
-  int sideThreshold = 500; // Adjust this threshold as needed
+  // Define positive and negative thresholds for acc and side
+  int accPositiveThreshold = 3000; // Adjust this threshold as needed
+  int accNegativeThreshold = 1000; // Adjust this threshold as needed
+  int sidePositiveThreshold = 3000; // Adjust this threshold as needed
+  int sideNegativeThreshold = 1000; // Adjust this threshold as needed
 
-  // Set acc and side to 255 if they exceed the threshold, otherwise set to 0
-  acc = (accRaw > accThreshold) ? 255 : 0;
-  side = (sideRaw > sideThreshold) ? 255 : 0;
+  // Determine acc value
+  if (accRaw > accPositiveThreshold) {
+    acc = 255;
+  } else if (accRaw < accNegativeThreshold) {
+    acc = -255;
+  } else {
+    acc = 0;
+  }
+
+  // Determine side value
+  if (sideRaw > sidePositiveThreshold) {
+    side = 255;
+  } else if (sideRaw < sideNegativeThreshold) {
+    side = -255;
+  } else {
+    side = 0;
+  }
 
   // Process throttle value with analog mapping
   throt = climit(stick_value(map(throt, lthrot, mthrot, 0, 255)));
