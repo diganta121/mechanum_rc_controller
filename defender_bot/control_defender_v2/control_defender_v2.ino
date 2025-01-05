@@ -1,179 +1,215 @@
-#include <esp_now.h>
 #include <WiFi.h>
-#include <esp_wifi.h>
+#include <WebServer.h>
 
-// Pins
-const int flP = 33;
-const int flN = 25;
-const int frN = 26;
-const int frP = 27;
+// Motor pins
+#define A1 21
+#define A2 23
+#define B1 32
+#define B2 33
+#define SPA 13
+#define SPB 14
 
-const int enfl = 19; // Enable pins
-const int enfr = 21;
+// Network credentials
+const char* ssid = "Cheese_bot";
+const char* password = "soccerrobo";
 
-const int ch_acc = 22;  // RC pins
-const int ch_side = 23;
-const int ch_throttle = 4;
-
-const int deadzonea = 100;
-const int deadzones = 100;
-const int timeout = 1000; // Timeout in milliseconds (1 second)
-
-int acc = 0;
-int side = 0;
-int throttle = 0;
-
-// Speed variables for each wheel
-int Lmotor = 0;
-int Rmotor = 0;
-
-unsigned long last_signal_time = 0;
-
-const unsigned int commandInterval = 25;  // Equivalent to delaytime
+const unsigned int commandInterval = 25;
 unsigned long lastCommandTime = 0;
+unsigned long currMilis = 0;
 
-uint8_t newMACAddress[] = { 0x36, 0x69, 0x2B, 0xFC, 0x4D, 0x3F };
+WebServer server(80);
 
-typedef struct struct_message {
-  int acc;
-  int side;
-  int Throttle;
-} struct_message;
-
-struct_message myData = { 0, 0, 0 };
-
-void OnDataRecv(const esp_now_recv_info_t *recv_info, const uint8_t *incomingData, int len) {
-  if (len == sizeof(myData)) {
-    memcpy(&myData, incomingData, sizeof(myData));
-  } else {
-    Serial.println("Received data size mismatch!");
-  }
-}
+// Structure to hold motor states
+struct MotorStates {
+  int RState;
+  int LState;
+} myData = {0, 0};
 
 void setup() {
-  pinMode(flP, OUTPUT);
-  pinMode(flN, OUTPUT);
-  pinMode(frP, OUTPUT);
-  pinMode(frN, OUTPUT);
-  pinMode(enfl, OUTPUT);
-  pinMode(enfr, OUTPUT);
-
-  pinMode(ch_acc, INPUT);
-  pinMode(ch_side, INPUT);
-  pinMode(ch_throttle, INPUT);
-
   Serial.begin(115200);
-
-  WiFi.mode(WIFI_STA);
-  Serial.println("Started");
   
-  if (esp_wifi_set_mac(WIFI_IF_STA, newMACAddress) != ESP_OK) {
-    Serial.println("Failed to set MAC address");
-  } else {
-    Serial.println("MAC address changed successfully");
-  }
+  // Motor pin setup
+  pinMode(A1, OUTPUT);
+  pinMode(A2, OUTPUT);
+  pinMode(B1, OUTPUT);
+  pinMode(B2, OUTPUT);
+  pinMode(SPA, OUTPUT);
+  pinMode(SPB, OUTPUT);
 
-  if (esp_now_init() != ESP_OK) {
-    Serial.println("Error initializing ESP-NOW");
-    return;
-  }
-  esp_now_register_recv_cb(OnDataRecv);
-  Serial.println("Bot started");
+  // Create AP
+  WiFi.softAP(ssid, password);
+  Serial.println("Access Point Started");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.softAPIP());
+
+  // Setup web server routes
+  server.on("/", handleRoot);
+  server.on("/control", HTTP_POST, handleControl);
+  server.begin();
+  Serial.println("HTTP server started");
 }
 
 void loop() {
-  unsigned long currMilis = millis();
+  server.handleClient();
   
+  currMilis = millis();
   if (currMilis - lastCommandTime > commandInterval) {
-    if (myData.Throttle != 0) {
-      commands();
-    } else {
-      stop_motors(); // Stop motors if throttle is 0
-    }
-    lastCommandTime = currMilis;
+    commands();
+    lastCommandTime = millis();
   }
+}
 
-  // Stop motors if no signal for 1 second
-  if (currMilis - last_signal_time > timeout) {
-    stop_motors();
+void handleRoot() {
+  String html = R"(
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name='viewport' content='width=device-width, initial-scale=1'>
+      <style>
+        body {
+          margin: 0;
+          padding: 20px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 100vh;
+          background: #f0f0f0;
+          font-family: Arial, sans-serif;
+        }
+        .container {
+          display: flex;
+          gap: 20px;
+        }
+        .column {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        button {
+          width: 120px;
+          height: 80px;
+          border: none;
+          border-radius: 10px;
+          background: #007bff;
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+          transition: background 0.3s;
+        }
+        button:active {
+          background: #0056b3;
+        }
+      </style>
+    </head>
+    <body>
+      <div class='container'>
+        <div class='column'>
+          <button onmousedown='control("L", 255)' onmouseup='control("L", 0)' ontouchstart='control("L", 255)' ontouchend='control("L", 0)'>Left Full Forward</button>
+          <button onmousedown='control("L", 128)' onmouseup='control("L", 0)' ontouchstart='control("L", 128)' ontouchend='control("L", 0)'>Left Half Forward</button>
+          <button onmousedown='control("L", -128)' onmouseup='control("L", 0)' ontouchstart='control("L", -128)' ontouchend='control("L", 0)'>Left Half Back</button>
+          <button onmousedown='control("L", -255)' onmouseup='control("L", 0)' ontouchstart='control("L", -255)' ontouchend='control("L", 0)'>Left Full Back</button>
+        </div>
+        <div class='column'>
+          <button onmousedown='control("R", 255)' onmouseup='control("R", 0)' ontouchstart='control("R", 255)' ontouchend='control("R", 0)'>Right Full Forward</button>
+          <button onmousedown='control("R", 128)' onmouseup='control("R", 0)' ontouchstart='control("R", 128)' ontouchend='control("R", 0)'>Right Half Forward</button>
+          <button onmousedown='control("R", -128)' onmouseup='control("R", 0)' ontouchstart='control("R", -128)' ontouchend='control("R", 0)'>Right Half Back</button>
+          <button onmousedown='control("R", -255)' onmouseup='control("R", 0)' ontouchstart='control("R", -255)' ontouchend='control("R", 0)'>Right Full Back</button>
+        </div>
+      </div>
+      <script>
+        function control(side, value) {
+          fetch('/control', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `side=${side}&value=${value}`
+          });
+        }
+      </script>
+    </body>
+    </html>
+  )";
+  server.send(200, "text/html", html);
+}
+
+void handleControl() {
+  if (server.hasArg("side") && server.hasArg("value")) {
+    String side = server.arg("side");
+    int value = server.arg("value").toInt();
+    
+    if (side == "L") {
+      myData.LState = value;
+    } else if (side == "R") {
+      myData.RState = value;
+    }
+    
+    server.send(200, "text/plain", "OK");
+  } else {
+    server.send(400, "text/plain", "Bad Request");
   }
 }
 
 void commands() {
-  last_signal_time = millis(); // Reset the last signal time when receiving new commands
+  int R = constrain(myData.RState, -255, 255);
+  int L = constrain(myData.LState, -255, 255);
 
-  throttle = myData.Throttle;
-  acc = myData.acc;
-  side = myData.side;
-
-  int throttle_res = map_to_low_res(throttle);
-  analogWrite(enfl, throttle_res);
-  analogWrite(enfr, throttle_res);
-
-  if (abs(acc) < deadzonea && abs(side) > deadzones) {
-    Lmotor = climt(+side);
-    Rmotor = climt(-side);
-  } else if (abs(acc) > deadzonea && abs(side) > deadzones) {
-    Lmotor = climt(acc + side / 2);
-    Rmotor = climt(acc - side / 2);
-    analogWrite(enfl, climt(throttle_res - side / 2));
-    analogWrite(enfr, climt(throttle_res + side / 2));
-  } else if (abs(acc) > deadzonea && abs(side) < deadzones) {
-    Lmotor = climt(acc);
-    Rmotor = climt(acc);
+  // Right side motor control
+  if (R > 10) {
+    MRF();
+    analogWrite(SPA, R);
+  } else if (R < -10) {
+    MRB();
+    analogWrite(SPA, -R);
   } else {
-    Lmotor = 0;
-    Rmotor = 0;
+    MRS();
+    analogWrite(SPA, 0);
   }
 
-  Serial.print("Throttle: ");
-  Serial.print(throttle_res);
-  Serial.print(" ACC: ");
-  Serial.print(acc);
-  Serial.print(" SIDE: ");
-  Serial.print(side);
-  Serial.print(" L: ");
-  Serial.print(Lmotor);
+  // Left side motor control
+  if (L > 10) {
+    MLF();
+    analogWrite(SPB, L);
+  } else if (L < -10) {
+    MLB();
+    analogWrite(SPB, -L);
+  } else {
+    MLS();
+    analogWrite(SPB, 0);
+  }
+
+  Serial.print("L: ");
+  Serial.print(L);
   Serial.print(" R: ");
-  Serial.println(Rmotor);
-
-  motor_move(Lmotor, flP, flN);
-  motor_move(Rmotor, frP, frN);
-  delay(2);
+  Serial.println(R);
 }
 
-int climt(int n) {
-  if (n > 255) return 255;
-  if (n < -255) return -255;
-  return n;
+void MRF() {
+  digitalWrite(A1, HIGH);
+  digitalWrite(A2, LOW);
 }
 
-void motor_move(int sp, int p, int n) {
-  if (abs(sp) < deadzonea) {
-    digitalWrite(p, LOW);
-    digitalWrite(n, LOW);
-  } else if (sp < 0) {
-    digitalWrite(p, LOW);
-    digitalWrite(n, HIGH);
-  } else if (sp > 0) {
-    digitalWrite(p, HIGH);
-    digitalWrite(n, LOW);
-  }
+void MRB() {
+  digitalWrite(A1, LOW);
+  digitalWrite(A2, HIGH);
 }
 
-int map_to_low_res(int value) {
-  if (value <= 50) return 0;
-  else if (value <= 220) {
-    return map(value, 50, 200, 90, 240);
-  } else return 255;
+void MRS() {
+  digitalWrite(A1, LOW);
+  digitalWrite(A2, LOW);
 }
 
-void stop_motors() {
-  digitalWrite(flP, LOW);
-  digitalWrite(flN, LOW);
-  digitalWrite(frP, LOW);
-  digitalWrite(frN, LOW);
-  analogWrite(enfl, 0);
-  analogWrite(enfr, 0);
-  Serial.println("Motors stopped.");
+void MLF() {
+  digitalWrite(B1, HIGH);
+  digitalWrite(B2, LOW);
+}
+
+void MLB() {
+  digitalWrite(B1, LOW);
+  digitalWrite(B2, HIGH);
+}
+
+void MLS() {
+  digitalWrite(B1, LOW);
+  digitalWrite(B2, LOW);
 }
