@@ -7,6 +7,10 @@
 #define FRP 27  // Front Right Positive
 #define FRN 26  // Front Right Negative
 
+#define enA 19
+#define enB 21
+
+
 // Network credentials
 const char* ssid = "Cheese_bot";
 const char* password = "soccerrobo";
@@ -25,7 +29,7 @@ struct MotorStates {
 
 void setup() {
   Serial.begin(115200);
-  
+   
   // Motor pin setup
   pinMode(FLP, OUTPUT);
   pinMode(FLN, OUTPUT);
@@ -69,7 +73,7 @@ void handleRoot() {
           justify-content: space-between;
           align-items: center;
           min-height: 100vh;
-          background: #f0f0f0;
+          background: #101010;
           font-family: Arial, sans-serif;
         }
         .container {
@@ -105,6 +109,19 @@ void handleRoot() {
           padding: 10px;
           text-align: center;
         }
+        button2 {
+          width: 100px;
+          height: 70px;
+          border: none;
+          border-radius: 10px;
+          background: #0f7b67;
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+          transition: background 0.3s;
+          padding: 10px;
+          text-align: center;
+        }
         button:active {
           background: #0056b3;
         }
@@ -114,22 +131,26 @@ void handleRoot() {
       <div class='container'>
         <div class='left-controls'>
           <div class='column'>
-            <button onmousedown='control("L", 255)' onmouseup='control("L", 0)' ontouchstart='control("L", 255)' ontouchend='control("L", 0)'>Left Full Forward</button>
-            <button onmousedown='control("L", -255)' onmouseup='control("L", 0)' ontouchstart='control("L", -255)' ontouchend='control("L", 0)'>Left Full Back</button>
+          full sp L
+            <button onmousedown='control("L", 255)' onmouseup='control("L", 0)' ontouchstart='control("L", 255)' ontouchend='control("L", 0)'></button>
+            <button onmousedown='control("L", -255)' onmouseup='control("L", 0)' ontouchstart='control("L", -255)' ontouchend='control("L", 0)'></button>
           </div>
           <div class='column'>
-            <button onmousedown='control("L", 128)' onmouseup='control("L", 0)' ontouchstart='control("L", 128)' ontouchend='control("L", 0)'>Left Half Forward</button>
-            <button onmousedown='control("L", -128)' onmouseup='control("L", 0)' ontouchstart='control("L", -128)' ontouchend='control("L", 0)'>Left Half Back</button>
+          half sp L
+            <button class='button2' onmousedown='control("L", 128)' onmouseup='control("L", 0)' ontouchstart='control("L", 128)' ontouchend='control("L", 0)'></button>
+            <button class='button2' onmousedown='control("L", -128)' onmouseup='control("L", 0)' ontouchstart='control("L", -128)' ontouchend='control("L", 0)'></button>
           </div>
         </div>
         <div class='right-controls'>
           <div class='column'>
-            <button onmousedown='control("R", 128)' onmouseup='control("R", 0)' ontouchstart='control("R", 128)' ontouchend='control("R", 0)'>Right Half Forward</button>
-            <button onmousedown='control("R", -128)' onmouseup='control("R", 0)' ontouchstart='control("R", -128)' ontouchend='control("R", 0)'>Right Half Back</button>
+            half sp R
+            <button class='button2' onmousedown='control("R", 128)' onmouseup='control("R", 0)' ontouchstart='control("R", 128)' ontouchend='control("R", 0)'></button>
+            <button class='button2' onmousedown='control("R", -128)' onmouseup='control("R", 0)' ontouchstart='control("R", -128)' ontouchend='control("R", 0)'></button>
           </div>
           <div class='column'>
-            <button onmousedown='control("R", 255)' onmouseup='control("R", 0)' ontouchstart='control("R", 255)' ontouchend='control("R", 0)'>Right Full Forward</button>
-            <button onmousedown='control("R", -255)' onmouseup='control("R", 0)' ontouchstart='control("R", -255)' ontouchend='control("R", 0)'>Right Full Back</button>
+            full sp R
+            <button onmousedown='control("R", 255)' onmouseup='control("R", 0)' ontouchstart='control("R", 255)' ontouchend='control("R", 0)'></button>
+            <button onmousedown='control("R", -255)' onmouseup='control("R", 0)' ontouchstart='control("R", -255)' ontouchend='control("R", 0)'></button>
           </div>
         </div>
       </div>
@@ -153,7 +174,7 @@ void handleRoot() {
 void handleControl() {
   if (server.hasArg("side") && server.hasArg("value")) {
     String side = server.arg("side");
-    int value = server.arg("value").toInt();
+    int value = server.arg("value").toInt(); 
     
     if (side == "L") {
       myData.LState = value;
@@ -172,22 +193,40 @@ void commands() {
   int L = constrain(myData.LState, -255, 255);
 
   // Right side motor control
-  if (R > 10) {
+   if (R > 10) {
     MRF();
-  } else if (R < -10) {
+  }
+   else if (R < -10) {
     MRB();
   } else {
     MRS();
   }
 
   // Left side motor control
-  if (L > 10) {
+   if (L > 10) {
     MLF();
+   
   } else if (L < -10) {
     MLB();
-  } else {
+  }
+   else {
     MLS();
   }
+
+  //speeeeeed
+ if ((abs(R) > 130) || (abs(L) > 130 )  ){
+    digitalWrite(enA,1);
+    digitalWrite(enB,1);
+  }
+  else if ((abs(R) > 10) || (abs(L) > 10)  ){
+    analogWrite(enA,128);
+    analogWrite(enB,128);
+  }
+  else{
+    digitalWrite(enA,0);
+    digitalWrite(enB,0);
+  }
+
 
   Serial.print("L: ");
   Serial.print(L);
