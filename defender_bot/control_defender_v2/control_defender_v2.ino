@@ -213,19 +213,25 @@ void commands() {
     MLS();
   }
 
-  //speeeeeed
- if ((abs(R) > 130) || (abs(L) > 130 )  ){
-    digitalWrite(enA,1);
-    digitalWrite(enB,1);
-  }
-  else if ((abs(R) > 10) || (abs(L) > 10)  ){
-    analogWrite(enA,128);
-    analogWrite(enB,128);
-  }
-  else{
-    digitalWrite(enA,0);
-    digitalWrite(enB,0);
-  }
+//   //speeeeeed
+//  if ((abs(R) > 130) || (abs(L) > 130 )  ){
+//     digitalWrite(enA,1);
+//     digitalWrite(enB,1);
+//       Serial.print("full");
+
+//   }
+//   else if ((abs(R) > 10) || (abs(L) > 10)  ){
+//     analogWrite(enA,128);
+//     analogWrite(enB,128);
+//       Serial.print("half ");
+
+//   }
+//   else{
+//     digitalWrite(enA,0);
+//     digitalWrite(enB,0);
+//       Serial.print("stop ");
+
+//   }
 
 
   Serial.print("L: ");
