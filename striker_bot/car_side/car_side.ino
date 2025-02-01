@@ -6,9 +6,12 @@
 #define A1 21
 #define A2 23
 #define B1 32
+
 #define B2 33
 #define SPA 13
 #define SPB 14
+
+#define KS 18
 
 const unsigned int commandInterval = 25;  // Equivalent to delaytime
 unsigned long lastCommandTime = 0;
@@ -79,6 +82,13 @@ void loop() {
 void commands() {
   int R = constrain(myData.RState, -255, 255);
   int L = constrain(myData.LState, -255, 255);
+
+  // controlling the enable pin(KS)
+  if (abs(R) > 10 && abs(L) >10) {
+    digitalWrite(KS, HIGH);
+  } else {
+    digitalWrite(KS, LOW);
+  }
 
   // Right side motor control
   if (R > 10) {
