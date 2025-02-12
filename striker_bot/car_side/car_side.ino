@@ -3,9 +3,9 @@
 #include <esp_wifi.h>
 
 // Motor pins
-#define A1 21
-#define A2 23
-#define B1 32
+#define A1 27
+#define A2 26
+#define B1 25
 
 #define B2 33
 #define SPA 13
