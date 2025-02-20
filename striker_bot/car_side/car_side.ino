@@ -6,38 +6,44 @@
 #define A1 27
 #define A2 26
 #define B1 25
+
 #define B2 33
 
-#define SPA 13 
+#define SPA 13
 #define SPB 14
 
 #define KS 18
 
-const unsigned int commandInterval = 25;  // Equivalent to delaytime
+const unsigned int commandInterval = 25; // Equivalent to delaytime
 unsigned long lastCommandTime = 0;
 
 unsigned long lastCommandTime2 = 0; // for lost contact
-unsigned long currMilis =0;
+unsigned long currMilis = 0;
 
+uint8_t newMACAddress[] = {0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E};
 
-uint8_t newMACAddress[] = { 0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E };
-
-typedef struct struct_message {
+typedef struct struct_message
+{
   int RState;
   int LState;
 } struct_message;
 
-struct_message myData = { 0, 0 };
+struct_message myData = {0, 0};
 
-void OnDataRecv(const esp_now_recv_info_t *recv_info, const uint8_t *incomingData, int len) {
-  if (len == sizeof(myData)) {
+void OnDataRecv(const esp_now_recv_info_t *recv_info, const uint8_t *incomingData, int len)
+{
+  if (len == sizeof(myData))
+  {
     memcpy(&myData, incomingData, sizeof(myData));
-  } else {
+  }
+  else
+  {
     Serial.println("Received data size mismatch!");
   }
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   // Motor pin setup
@@ -52,64 +58,85 @@ void setup() {
   Serial.println("Started");
 
   // Change ESP32 Mac Address
-  if (esp_wifi_set_mac(WIFI_IF_STA, newMACAddress) != ESP_OK) {
+  if (esp_wifi_set_mac(WIFI_IF_STA, newMACAddress) != ESP_OK)
+  {
     Serial.println("Failed to set MAC address");
-  } else {
+  }
+  else
+  {
     Serial.println("MAC address changed successfully");
   }
 
   // Initialize ESP-NOW
-  if (esp_now_init() != ESP_OK) {
+  if (esp_now_init() != ESP_OK)
+  {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
   esp_now_register_recv_cb(OnDataRecv);
 }
 
-void loop() {
+void loop()
+{
   currMilis = millis();
-  if (currMilis - lastCommandTime > commandInterval) {
+  if (currMilis - lastCommandTime > commandInterval)
+  {
     commands();
     lastCommandTime = millis();
   }
-  if (currMilis - lastCommandTime2 > 2000) {
+  if (currMilis - lastCommandTime2 > 2000)
+  {
     myData.RState = 0;
     myData.LState = 0;
     lastCommandTime2 = millis();
   }
 }
 
-void commands() {
+void commands()
+{
   int R = constrain(myData.RState, -255, 255);
   int L = constrain(myData.LState, -255, 255);
 
   // controlling the enable pin(KS)
-  if (abs(R) > 10 && abs(L) >10) {
+  if (abs(R) > 10 && abs(L) > 10)
+  {
     digitalWrite(KS, HIGH);
-  } else {
+  }
+  else
+  {
     digitalWrite(KS, LOW);
   }
 
   // Right side motor control
-  if (R > 10) {
+  if (R > 10)
+  {
     MRF();
     analogWrite(SPA, R);
-  } else if (R < -10) {
+  }
+  else if (R < -10)
+  {
     MRB();
     analogWrite(SPA, -R);
-  } else {
+  }
+  else
+  {
     MRS();
     analogWrite(SPA, 0);
   }
 
   // Left side motor control
-  if (L > 10) {
+  if (L > 10)
+  {
     MLF();
     analogWrite(SPB, L);
-  } else if (L < -10) {
+  }
+  else if (L < -10)
+  {
     MLB();
     analogWrite(SPB, -L);
-  } else {
+  }
+  else
+  {
     MLS();
     analogWrite(SPB, 0);
   }
@@ -121,32 +148,38 @@ void commands() {
   lastCommandTime2 = millis();
 }
 
-void MRF() {
+void MRF()
+{
   digitalWrite(A1, HIGH);
   digitalWrite(A2, LOW);
 }
 
-void MRB() {
+void MRB()
+{
   digitalWrite(A1, LOW);
   digitalWrite(A2, HIGH);
 }
 
-void MRS() {
+void MRS()
+{
   digitalWrite(A1, LOW);
   digitalWrite(A2, LOW);
 }
 
-void MLF() {
+void MLF()
+{
   digitalWrite(B1, HIGH);
   digitalWrite(B2, LOW);
 }
 
-void MLB() {
+void MLB()
+{
   digitalWrite(B1, LOW);
   digitalWrite(B2, HIGH);
 }
 
-void MLS() {
+void MLS()
+{
   digitalWrite(B1, LOW);
   digitalWrite(B2, LOW);
 }
