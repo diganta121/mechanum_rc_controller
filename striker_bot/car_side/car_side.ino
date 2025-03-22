@@ -1,18 +1,22 @@
 #include <esp_now.h>
 #include <WiFi.h>
 #include <esp_wifi.h>
+#include <BTS7960.h>
 
 // Motor pins
 #define A1 27
 #define A2 26
 #define B1 25
-
 #define B2 33
 
 #define SPA 13
 #define SPB 14
 
 #define KS 18
+
+BTS7960 Rmotor(SPA, A1, A2);
+BTS7960 Lmotor(SPB, B1, B2);
+
 
 const unsigned int commandInterval = 25; // Equivalent to delaytime
 unsigned long lastCommandTime = 0;
@@ -47,12 +51,12 @@ void setup()
   Serial.begin(115200);
 
   // Motor pin setup
-  pinMode(A1, OUTPUT);
-  pinMode(A2, OUTPUT);
-  pinMode(B1, OUTPUT);
-  pinMode(B2, OUTPUT);
-  pinMode(SPA, OUTPUT);
-  pinMode(SPB, OUTPUT);
+  // pinMode(A1, OUTPUT);
+  // pinMode(A2, OUTPUT);
+  // pinMode(B1, OUTPUT);
+  // pinMode(B2, OUTPUT);
+  // pinMode(SPA, OUTPUT);
+  // pinMode(SPB, OUTPUT);
 
   WiFi.mode(WIFI_STA);
   Serial.println("Started");
@@ -98,47 +102,64 @@ void commands()
   int L = constrain(myData.LState, -255, 255);
 
   // controlling the enable pin(KS)
-  if (abs(R) > 10 && abs(L) > 10)
+  if (abs(R) > 10)
   {
-    digitalWrite(KS, HIGH);
+    Rmotor.Enable();//digitalWrite(KS, HIGH);
   }
   else
   {
-    digitalWrite(KS, LOW);
+    Rmotor.Disable();//digitalWrite(KS, LOW);
   }
 
-  // Right side motor control
+ // Right side motor control
   if (R > 10)
   {
-    MRF();
-    analogWrite(SPA, R);
+    //MRF();
+    //analogWrite(SPA, R);
+    Rmotor.TurnLeft(R);
   }
   else if (R < -10)
   {
-    MRB();
-    analogWrite(SPA, -R);
+    // MRB();
+    // analogWrite(SPA, -R);
+    Rmotor.TurnRight(-R);
+
   }
   else
   {
-    MRS();
-    analogWrite(SPA, 0);
+    // MRS();
+    // analogWrite(SPA, 0);
+    Rmotor.Stop();
+  }
+
+
+  if (abs(L) > 10)
+  {
+    Lmotor.Enable();//digitalWrite(KS, HIGH);
+  }
+  else
+  {
+    Lmotor.Disable();//digitalWrite(KS, LOW);
   }
 
   // Left side motor control
   if (L > 10)
   {
-    MLF();
-    analogWrite(SPB, L);
+    // MLF();
+    // analogWrite(SPB, L);
+    Lmotor.TurnLeft(L);
   }
   else if (L < -10)
   {
-    MLB();
-    analogWrite(SPB, -L);
+    // MLB();
+    // analogWrite(SPB, -L);
+    Lmotor.TurnRight(-L);
   }
   else
   {
-    MLS();
-    analogWrite(SPB, 0);
+    // MLS();
+    // analogWrite(SPB, 0);
+    Lmotor.Stop();
   }
 
   Serial.print("L: ");
@@ -148,38 +169,38 @@ void commands()
   lastCommandTime2 = millis();
 }
 
-void MRF()
-{
-  digitalWrite(A1, HIGH);
-  digitalWrite(A2, LOW);
-}
+// void MRF()
+// {
+//   digitalWrite(A1, HIGH);
+//   digitalWrite(A2, LOW);
+// }
 
-void MRB()
-{
-  digitalWrite(A1, LOW);
-  digitalWrite(A2, HIGH);
-}
+// void MRB()
+// {
+//   digitalWrite(A1, LOW);
+//   digitalWrite(A2, HIGH);
+// }
 
-void MRS()
-{
-  digitalWrite(A1, LOW);
-  digitalWrite(A2, LOW);
-}
+// void MRS()
+// {
+//   digitalWrite(A1, LOW);
+//   digitalWrite(A2, LOW);
+// }
 
-void MLF()
-{
-  digitalWrite(B1, HIGH);
-  digitalWrite(B2, LOW);
-}
+// void MLF()
+// {
+//   digitalWrite(B1, HIGH);
+//   digitalWrite(B2, LOW);
+// }
 
-void MLB()
-{
-  digitalWrite(B1, LOW);
-  digitalWrite(B2, HIGH);
-}
+// void MLB()
+// {
+//   digitalWrite(B1, LOW);
+//   digitalWrite(B2, HIGH);
+// }
 
-void MLS()
-{
-  digitalWrite(B1, LOW);
-  digitalWrite(B2, LOW);
-}
+// void MLS()
+// {
+//   digitalWrite(B1, LOW);
+//   digitalWrite(B2, LOW);
+// }
