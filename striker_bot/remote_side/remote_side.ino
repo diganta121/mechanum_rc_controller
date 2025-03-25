@@ -7,8 +7,8 @@ const int deadzone = 35;
 const int RAxisPin = 33;
 const int LAxisPin = 32;
 
-const int LSPButton = 35;
-const int RSPButton = 34;
+const int LSPButton = 22;
+const int RSPButton = 21;
 
 #define LED_PIN 19
 
@@ -201,7 +201,7 @@ void loop() {
   Rvalue = climit(stick_value(map(Rvalue,4095,0,-255,255))); // reversed //stick_value(Rvalue);
   Lvalue = climit(stick_value(map(Lvalue,4095,0,255,-255)));//stick_value(Lvalue);
 
-  if (Rsp), {
+  if (Rsp) {
     Rvalue = 255;
     Lvalue = 255;
   }

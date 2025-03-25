@@ -116,13 +116,13 @@ void commands()
   {
     //MRF();
     //analogWrite(SPA, R);
-    Rmotor.TurnLeft(R);
+    Rmotor.TurnLeft(abs(R));
   }
   else if (R < -10)
   {
     // MRB();
     // analogWrite(SPA, -R);
-    Rmotor.TurnRight(-R);
+    Rmotor.TurnRight(abs(R));
 
   }
   else
@@ -147,13 +147,13 @@ void commands()
   {
     // MLF();
     // analogWrite(SPB, L);
-    Lmotor.TurnLeft(L);
+    Lmotor.TurnLeft(abs(L));
   }
   else if (L < -10)
   {
     // MLB();
     // analogWrite(SPB, -L);
-    Lmotor.TurnRight(-L);
+    Lmotor.TurnRight(abs(L));
   }
   else
   {
